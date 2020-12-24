@@ -4,52 +4,64 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
-enum NodeType {Operation, Variable, Placeholder}; 
+
 
 //Base Node
 class Node  
 {
     public:
-        void AddOutputNode(std::shared_ptr<Node> node);
-        void SetOutput(Matrix* output);
-        NodeType GetType();
+        ~Node();
+        virtual void Forward() = 0;
+        //virtual void Backward() = 0;     
+        Matrix* Data();
+        std::vector<Node*> Children();
+        const std::string Name();
+
     protected:
-        std::vector<std::shared_ptr<Node>> m_input_nodes;
-        std::vector<std::shared_ptr<Node>> m_output_nodes;
-        Matrix* m_output;
-        NodeType m_node_type;
-       
+        void Connect(Node* node);
+                
+        std::vector<Node*> m_input_nodes;
+        std::vector<Node*> m_output_nodes;
+        
+        Matrix* m_data = nullptr;
+
+        std::string m_name = "Node";
+
+    private:
+        void AddOutput(Node * node);
 };
 
-//Operation
-class Operation : public Node
+
+//Value
+class Value : public Node
 {
     public:
-        Operation(std::vector<std::shared_ptr<Node>> input_nodes);
-        //virtual Matrix* Forward(Matrix* x, Matrix* y) = 0;
-        //virtual void Backward(Matrix* x, Matrix* y);        
+        Value(Matrix& val) : Value(&val){};
+        Value(Matrix* val);
+        void Forward();
+        
+        
 };
 
-//Variable
-class Variable : public Node
+//OPERATIONS
+class Add : public Node
 {
     public:
-        Variable(Matrix* val);
-        ~Variable();
+        Add(Node& x, Node& y) : Add(&x, &y){};
+        Add(Node * x, Node * y);
+        void Forward();
 };
 
-//Placeholder
-class Placeholder : public Node
+
+class Pow : public Node
 {
     public:
-        Placeholder();
-
+        Pow(Node& x, double exponent) : Pow(&x, exponent){};
+        Pow(Node * x, double exponent);
+        void Forward();
+    private:
+        double m_exponent;
 };
 
-class Add : public Operation
-{
-    public:
-        Matrix* Forward(Matrix* x, Matrix* y);
-
-};

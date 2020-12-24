@@ -10,6 +10,7 @@ LDFLAGS =
 OBJ=main.o \
 	src/matrix.o \
 	src/node.o \
+	src/graph.o \
 
 
 

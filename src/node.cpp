@@ -1,63 +1,97 @@
 #include "node.h"
 
 #include <stdexcept>
+#include <math.h>
 
 //NODE
+Node::~Node()
+{
+    //delete m_data;
+}
 
-void Node::AddOutputNode(std::shared_ptr<Node> node)
+Matrix* Node::Data(){return m_data;}
+const std::string Node::Name(){return m_name;}
+std::vector<Node*> Node::Children(){return m_input_nodes;};
+
+void Node::Connect(Node* node)
+{
+    m_input_nodes.push_back(node);
+    node->AddOutput(this);
+}
+
+void Node::AddOutput(Node* node)
 {
     m_output_nodes.push_back(node);
 }
 
-void Node::SetOutput(Matrix* output)
+
+//Value
+Value::Value(Matrix* val)
 {
-    m_output = output;
+    m_data = val;
+    m_name = "Value";
 }
 
-NodeType Node::GetType(){return m_node_type;}
-
-
-//OPERATION
-Operation::Operation(std::vector<std::shared_ptr<Node>> input_nodes)
-{
-    m_input_nodes = input_nodes;
-
-    for(auto& input_node : m_input_nodes)
-    {
-        input_node->AddOutputNode(std::shared_ptr<Node>(this));
-    }
-}
-
-//VARIABLE
-Variable::Variable(Matrix* val)
-{
-    m_output = val;
-    m_node_type = NodeType::Variable;
-}
-
-//Placeholder
-Placeholder::Placeholder()
-{
-    m_node_type = NodeType::Placeholder;
-}
+void Value::Forward(){}
 
 //OPERATIONS
+
 //ADD
-Matrix* Add::Forward(Matrix* x, Matrix* y)
+
+Add::Add(Node * x, Node * y)
 {
-    if(x->GetColums() != y->GetColums() || x->GetRows() != y->GetRows())
+    Connect(x);
+    Connect(y);
+    m_name = "Add";
+}
+
+void Add::Forward()
+{
+    //we can assume these exist
+    Matrix* a = m_input_nodes[0]->Data(); 
+    Matrix* b = m_input_nodes[1]->Data(); 
+
+    if(a == nullptr || b == nullptr)
     {
-        throw std::runtime_error("Matricies not same dims");
+        throw std::runtime_error("ADD: Data of input nodes == nullptr. Check nodes are connected properly :) ");
+    }
+    if(a->GetColums() != b->GetColums() || a->GetRows() != b->GetRows())
+    {
+        throw std::runtime_error("ADD: Matrix dims are not the same");
     }
 
-    Matrix* c = new Matrix(x->GetRows(), x->GetColums());
-
-    for(size_t i=0; i < x->GetRows(); i++)
+    m_data = new Matrix(a->GetRows(), a->GetColums());
+    for(size_t i=0; i<a->GetRows();i++)
     {
-        for(size_t j=0; j < x->GetColums(); j++)
+        for (size_t j = 0; j < a->GetColums(); j++)
         {
-            (*c)[i][j] = (*x)[i][j] + (*y)[i][j];
+            (*m_data)[i][j] = (*a)[i][j] + (*b)[i][j]; 
         }
     }
-    return c;
 }
+
+//POW
+Pow::Pow(Node * x, double exponent)
+{
+    Connect(x);
+    m_exponent = exponent;
+    m_name = "Pow";
+}
+
+void Pow::Forward()
+{
+    Matrix* a = m_input_nodes[0]->Data();
+    if(a == nullptr)
+    {
+        throw std::runtime_error("POW: Data of input nodes == nullptr. Check nodes are connected properly :) ");
+    }
+    m_data = new Matrix(a->GetRows(), a->GetColums());
+    for(size_t i=0; i<a->GetRows();i++)
+    {
+        for (size_t j = 0; j < a->GetColums(); j++)
+        {
+            (*m_data)[i][j] = pow( (*a)[i][j], m_exponent); 
+        }
+    }
+}
+
