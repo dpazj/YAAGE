@@ -1,39 +1,38 @@
-#include "src/matrix.h"
+#include "src/tensor.h"
 #include "src/node.h"
 #include "src/graph.h"
 
+#include <iostream>
+
 int main()
 {
-    size_t height = 1;
-    size_t width = 1;
+    
 
-    Matrix x(height, width);
-    Matrix y(height, width);
+    Tensor A = {{1, 0}, 
+                {0, -1}};
 
-    for(size_t i=0; i < height;i++)
-    {
-        for(size_t j=0;j<width;j++)
-        {
-            x[i][j] = (i * width) + j + 1;
-            y[j][i] = (j * height) + i + 1;
-        }
-    }
+    Tensor b = {{1},
+                {1}};
+
+    Tensor x = {{1},
+                {2}};
 
 
-    Value a(x);
-    Value b(y);
+    Value nodeA(A);
+    Value nodeb(b);
+    Value nodex(x);
 
-    //create node graph
-    Add c(a, b);
-    Add d(c, b);
-    Pow e(d, 2.0f);
-    Add f(e, d);
+    MatMul a1(nodeA, nodex);
+    Add z(a1,nodeb);
 
-    Graph graph(a, f);
+
+
+    Graph graph(a1, z);
 
     auto ans = graph.Forward();
     if(ans != nullptr)
     {
+        std::cout << std::endl;
         ans->Print();
     }
 

@@ -1,12 +1,16 @@
 #pragma once
-#include <iostream>
 
+typedef unsigned long size_t;
 
-class Matrix
+#include <initializer_list>
+
+class Tensor
 {
     public:
-        Matrix(size_t m, size_t n=1);
-        ~Matrix();
+        Tensor(size_t m, size_t n=1);
+        Tensor(std::initializer_list<std::initializer_list<double>> il);
+        Tensor();
+        ~Tensor();
 
         size_t GetColums();
         size_t GetRows();

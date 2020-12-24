@@ -1,6 +1,6 @@
 #pragma once
 
-#include "matrix.h"
+#include "tensor.h"
 
 #include <vector>
 #include <memory>
@@ -15,7 +15,7 @@ class Node
         ~Node();
         virtual void Forward() = 0;
         //virtual void Backward() = 0;     
-        Matrix* Data();
+        Tensor* Data();
         std::vector<Node*> Children();
         const std::string Name();
 
@@ -25,7 +25,7 @@ class Node
         std::vector<Node*> m_input_nodes;
         std::vector<Node*> m_output_nodes;
         
-        Matrix* m_data = nullptr;
+        Tensor* m_data = nullptr;
 
         std::string m_name = "Node";
 
@@ -38,14 +38,15 @@ class Node
 class Value : public Node
 {
     public:
-        Value(Matrix& val) : Value(&val){};
-        Value(Matrix* val);
+        Value(Tensor& val) : Value(&val){};
+        Value(Tensor* val);
         void Forward();
-        
-        
 };
 
 //OPERATIONS
+
+
+
 class Add : public Node
 {
     public:
@@ -53,7 +54,6 @@ class Add : public Node
         Add(Node * x, Node * y);
         void Forward();
 };
-
 
 class Pow : public Node
 {
@@ -63,5 +63,13 @@ class Pow : public Node
         void Forward();
     private:
         double m_exponent;
+};
+
+class MatMul : public Node
+{
+    public:
+        MatMul(Node& x, Node& y) : MatMul(&x, &y){};
+        MatMul(Node * x, Node * y); 
+        void Forward();
 };
 

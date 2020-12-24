@@ -1,14 +1,16 @@
 
+INCLUDE = -I/usr/local/include/NumCpp/
+
 CXX = g++
 
 CFLAGS = -Wall -Werror
-CPPFLAGS = $(CFLAGS)
+CPPFLAGS = $(CFLAGS) $(INCLUDE)
 
 LDFLAGS = 
 
 
 OBJ=main.o \
-	src/matrix.o \
+	src/tensor.o \
 	src/node.o \
 	src/graph.o \
 

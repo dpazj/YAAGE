@@ -1,7 +1,7 @@
 #pragma once
 
 #include "node.h"
-#include "matrix.h"
+#include "tensor.h"
 
 #include <unordered_set>
 
@@ -12,7 +12,7 @@ class Graph
         Graph(Node& input, Node& output) : Graph(&input, &output){};
         Graph(Node * input, Node * output);
         //Graph(std::vector<Node*> inputs, std::vector<Node*> outputs);
-        Matrix* Forward();
+        Tensor* Forward();
         //void Backward();
 
     private:
