@@ -8,7 +8,7 @@ Graph::Graph(Node * input, Node * output)
     m_output_node = output;
 }
 
-Matrix* Graph::Forward()
+Tensor* Graph::Forward()
 {
     TraverseBackwards(m_output_node); 
 

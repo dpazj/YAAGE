@@ -8,22 +8,19 @@ int main()
 {
     
 
-    Tensor A = {{1, 0}, 
-                {0, -1}};
-
-    Tensor b = {{1},
-                {1}};
-
-    Tensor x = {{1},
-                {2}};
 
 
-    Value nodeA(A);
-    Value nodeb(b);
-    Value nodex(x);
+    Value A = {{1, 0}, 
+               {0, -1}};
 
-    MatMul a1(nodeA, nodex);
-    Add z(a1,nodeb);
+    Value b = {{1},
+               {1}};
+
+    Value x= {{1},
+              {2}};
+
+    Dot a1(A, x);
+    Add z(a1,b);
 
 
 

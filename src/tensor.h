@@ -9,7 +9,6 @@ class Tensor
     public:
         Tensor(size_t m, size_t n=1);
         Tensor(std::initializer_list<std::initializer_list<double>> il);
-        Tensor();
         ~Tensor();
 
         size_t GetColums();
@@ -19,6 +18,8 @@ class Tensor
 
         double* operator[](size_t i);
         
+        Tensor operator+();
+
     private:
         double** m_data;
         size_t m_rows;
