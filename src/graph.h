@@ -13,14 +13,18 @@ class Graph
         Graph(Node * input, Node * output);
         //Graph(std::vector<Node*> inputs, std::vector<Node*> outputs);
         Tensor* Forward();
-        //void Backward();
+        Tensor* Backward();
 
     private:
         Node* m_input_node;
         Node* m_output_node;
 
-        void TraverseBackwards(Node * node);
-        std::unordered_set<Node*> m_exec_order;
+        void PopulateExecOrder(Node * node);
+ 
+        std::unordered_set<Node*> m_visited;
+
+        void VisitBackwards(Node * node);
+        void VisitForwards(Node * node);
 
 
 };

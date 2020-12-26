@@ -1,7 +1,7 @@
 #include "node.h"
+#include "tensor_ops.h"
 
 #include <stdexcept>
-#include <math.h>
 #include <iostream>
 
 //NODE
@@ -20,8 +20,13 @@ Node::~Node()
 
 Tensor* Node::Data(){return m_data;}
 Tensor* Node::Gradient(){return m_gradient;}
-const std::string Node::Name(){return m_name;}
 std::vector<Node*> Node::Children(){return m_input_nodes;};
+
+void Node::AllocateGradientMem(size_t row, size_t col, double val)
+{
+    if(m_gradient != nullptr){return;} //gradient already been allocated
+    m_gradient = new Tensor(row,col, val);
+}
 
 void Node::Connect(Node* node)
 {
@@ -34,8 +39,23 @@ void Node::AddOutput(Node* node)
     m_output_nodes.push_back(node);
 }
 
+//TWO INPUT NODE
+TwoInputNode::TwoInputNode(Node * x, Node * y)
+{
+    Connect(x);
+    Connect(y);
+}
+
 
 //Value
+const std::string Value::Name(){return "Value";}
+
+Value::Value(std::initializer_list<double> il)
+{
+    m_data = new Tensor(il);
+    m_owns_memory = true;
+}
+
 Value::Value(std::initializer_list<std::initializer_list<double>> il)
 {
     m_data = new Tensor(il);
@@ -45,7 +65,6 @@ Value::Value(std::initializer_list<std::initializer_list<double>> il)
 Value::Value(Tensor* val)
 {
     m_data = val;
-    m_name = "Value";
     m_owns_memory = false;
 }
 
@@ -55,13 +74,7 @@ void Value::Backward(){}
 //OPERATIONS
 
 //ADD
-
-Add::Add(Node * x, Node * y)
-{
-    Connect(x);
-    Connect(y);
-    m_name = "Add";
-}
+const std::string Add::Name(){return "Add";}
 
 void Add::Forward()
 {
@@ -73,152 +86,151 @@ void Add::Forward()
     {
         throw std::runtime_error("ADD: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
     }
-    if(a->GetColums() != b->GetColums() || a->GetRows() != b->GetRows())
-    {
-        throw std::runtime_error("ADD: Matrix dims are not the same");
-    }
-
-    m_data = new Tensor(a->GetRows(), a->GetColums());
-    for(size_t i=0; i<a->GetRows();i++)
-    {
-        for (size_t j = 0; j < a->GetColums(); j++)
-        {
-            (*m_data)[i][j] = (*a)[i][j] + (*b)[i][j]; 
-        }
-    }
+  
+    m_data = new Tensor(op::Add(*a, *b));
 }
 
-
-//SUB
-Sub::Sub(Node * x, Node * y)
+void Add::Backward()
 {
-    Connect(x);
-    Connect(y);
-    m_name = "SUB";
-}
 
-void Sub::Forward()
-{
-    //we can assume these nodes exist
-    Tensor* a = m_input_nodes[0]->Data(); 
-    Tensor* b = m_input_nodes[1]->Data(); 
+    Node* a = m_input_nodes[0];
+    Node* b = m_input_nodes[1];
 
     if(a == nullptr || b == nullptr)
     {
-        throw std::runtime_error("SUB: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+        throw std::runtime_error("ADD back: AAHHHHHH");
     }
-    if(a->GetColums() != b->GetColums() || a->GetRows() != b->GetRows())
-    {
-        throw std::runtime_error("SUB: Matrix dims are not the same");
-    }
+    
 
-    m_data = new Tensor(a->GetRows(), a->GetColums());
-    for(size_t i=0; i<a->GetRows();i++)
-    {
-        for (size_t j = 0; j < a->GetColums(); j++)
-        {
-            (*m_data)[i][j] = (*a)[i][j] - (*b)[i][j]; 
-        }
-    }
+    a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+    b->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+
+
+    Tensor* a_grad = a->Gradient(); 
+    Tensor* b_grad = b->Gradient(); 
+
+
+    *a_grad = op::Add(*a_grad, *m_gradient);
+    *b_grad = op::Add(*b_grad, *m_gradient);
+
 }
 
-//POW
-Pow::Pow(Node * x, double exponent)
-{
-    Connect(x);
-    m_exponent = exponent;
-    m_name = "Pow";
-}
 
-void Pow::Forward()
-{
-    Tensor* a = m_input_nodes[0]->Data();
-    if(a == nullptr)
-    {
-        throw std::runtime_error("POW: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
-    }
-    m_data = new Tensor(a->GetRows(), a->GetColums());
-    for(size_t i=0; i<a->GetRows();i++)
-    {
-        for (size_t j = 0; j < a->GetColums(); j++)
-        {
-            (*m_data)[i][j] = pow( (*a)[i][j], m_exponent); 
-        }
-    }
-}
+// //SUB
+// const std::string Sub::Name(){return "Sub";}
 
-//DOT
-Dot::Dot(Node * x, Node * y)
-{
-    Connect(x);
-    Connect(y);
-    m_name = "Dot";
-}
+// void Sub::Forward()
+// {
+//     //we can assume these nodes exist
+//     Tensor* a = m_input_nodes[0]->Data(); 
+//     Tensor* b = m_input_nodes[1]->Data(); 
 
-void Dot::Forward()
-{
-    //we can assume these exist
-    Tensor* a = m_input_nodes[0]->Data(); 
-    Tensor* b = m_input_nodes[1]->Data(); 
+//     if(a == nullptr || b == nullptr)
+//     {
+//         throw std::runtime_error("SUB: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+//     }
 
-    if(a == nullptr || b == nullptr)
-    {
-        throw std::runtime_error("MatMul: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
-    }
+//     m_data = new Tensor(op::Sub(*a, *b));
+// }
 
-    size_t M = a->GetRows();
-    size_t K = a->GetColums();
-    size_t N = b->GetColums();
+// void Sub::Backward()
+// {
+//     Node* a = m_input_nodes[0];
+//     Node* b = m_input_nodes[1];
+//     //input nodes gradients
 
-    if(K != b->GetRows())
-    {
-        throw std::runtime_error("MatMul: Matricies do not share common dim");
-    }
+//     a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+//     a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
 
-    m_data = new Tensor(a->GetRows(), b->GetColums());
+//     Tensor* a_grad = a->Gradient(); 
+//     Tensor* b_grad = b->Gradient(); 
 
-    for(size_t i=0; i<M;i++)
-    {
-        for (size_t j = 0; j < N; j++)
-        {
-            double acc = 0.0f;
-            for (size_t k = 0; k < K; k++)
-            {
-                acc += (*a)[i][k] * (*b)[k][j];
-            }
-            (*m_data)[i][j] = acc; 
-        }
-    }
-}
+//     *a_grad = op::Add(*a_grad, *m_data);
+//     *b_grad = op::Add(*b_grad, *m_data);
+// }
 
-//MUL
-Mul::Mul(Node * x, Node * y)
-{
-    Connect(x);
-    Connect(y);
-    m_name = "Dot";
-}
+// //POW
+// const std::string Pow::Name(){return "Pow";}
 
-void Mul::Forward()
-{
-    Tensor* a = m_input_nodes[0]->Data(); 
-    Tensor* b = m_input_nodes[1]->Data(); 
+// void Pow::Forward()
+// {
+//     Tensor* a = m_input_nodes[0]->Data();
+//     if(a == nullptr)
+//     {
+//         throw std::runtime_error("POW: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+//     }
+    
+//     m_data = new Tensor(op::Pow(*a, m_exponent));
+// }
 
-    if(a == nullptr || b == nullptr)
-    {
-        throw std::runtime_error("ADD: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
-    }
-    if(a->GetColums() != b->GetColums() || a->GetRows() != b->GetRows())
-    {
-        throw std::runtime_error("ADD: Matrix dims are not the same");
-    }
+// void Pow::Backward()
+// {
+    
+// }
 
-    m_data = new Tensor(a->GetRows(), a->GetColums());
-    for(size_t i=0; i<a->GetRows();i++)
-    {
-        for (size_t j = 0; j < a->GetColums(); j++)
-        {
-            (*m_data)[i][j] = (*a)[i][j] * (*b)[i][j]; 
-        }
-    }
-}
+// //DOT
+
+// const std::string Dot::Name(){return "Dot";}
+
+// void Dot::Forward()
+// {
+//     //we can assume these exist
+//     Tensor* a = m_input_nodes[0]->Data(); 
+//     Tensor* b = m_input_nodes[1]->Data(); 
+
+//     if(a == nullptr || b == nullptr)
+//     {
+//         throw std::runtime_error("Dot: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+//     }
+//     m_data = new Tensor(op::Dot(*a, *b));
+// }
+
+// void Dot::Backward()
+// {
+    
+// }
+
+// //MUL
+
+// const std::string Mul::Name(){return "Mul";}
+
+// void Mul::Forward()
+// {
+//     Tensor* a = m_input_nodes[0]->Data(); 
+//     Tensor* b = m_input_nodes[1]->Data(); 
+
+//     if(a == nullptr || b == nullptr)
+//     {
+//         throw std::runtime_error("ADD: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+//     }
+//     m_data = new Tensor(op::Mul(*a, *b));
+// }
+
+// void Mul::Backward()
+// {
+    
+// }
+
+// //Sum
+// Sum::Sum(Node * node)
+// {
+//     Connect(node);
+// }
+
+// const std::string Sum::Name(){return "Mul";}
+
+// void Sum::Forward()
+// {
+//     Tensor* a = m_input_nodes[0]->Data(); 
+
+//     if(a == nullptr)
+//     {
+//         throw std::runtime_error("Sum: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+//     }
+//     m_data = new Tensor(op::Sum(*a));
+// }
+
+// void Sum::Backward()
+// {
+    
+// }

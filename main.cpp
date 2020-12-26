@@ -1,4 +1,5 @@
 #include "src/tensor.h"
+#include "src/tensor_ops.h"
 #include "src/node.h"
 #include "src/graph.h"
 
@@ -6,32 +7,26 @@
 
 int main()
 {
-    
+      
+    Value x({4.0});
 
+    Add y(x,x);
+    Add z(y,x);
 
+    Graph graph(x,z);
 
-    Value A = {{1, 0}, 
-               {0, -1}};
-
-    Value b = {{1},
-               {1}};
-
-    Value x= {{1},
-              {2}};
-
-    Dot a1(A, x);
-    Add z(a1,b);
-
-
-
-    Graph graph(a1, z);
-
-    auto ans = graph.Forward();
-    if(ans != nullptr)
+    auto* answer = graph.Forward();
+    if(answer != nullptr)
     {
-        std::cout << std::endl;
-        ans->Print();
+        answer->Print();
     }
+    
+    auto* gradient_input = graph.Backward();
+    if(gradient_input != nullptr)
+    {
+        gradient_input->Print();
+    }
+                
 
     return 0;
 

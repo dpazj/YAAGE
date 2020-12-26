@@ -7,21 +7,28 @@ typedef unsigned long size_t;
 class Tensor
 {
     public:
-        Tensor(size_t m, size_t n=1);
+        Tensor(const Tensor& tensor);
+        Tensor(size_t m, size_t n=1, double init_val = 0.0f);
         Tensor(std::initializer_list<std::initializer_list<double>> il);
+        Tensor(std::initializer_list<double> il);
+
         ~Tensor();
 
-        size_t GetColums();
-        size_t GetRows();
+        size_t Columns();
+        size_t Rows();
+        size_t Size();
+
+        double* Data();
 
         void Print();
-
-        double* operator[](size_t i);
         
-        Tensor operator+();
+        double* operator[](size_t i);
+        Tensor& operator=(const Tensor& rhs);
 
     private:
-        double** m_data;
+        double* m_data = nullptr;
+        size_t m_size;
         size_t m_rows;
         size_t m_columns;
 };
+

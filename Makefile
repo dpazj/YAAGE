@@ -11,8 +11,10 @@ LDFLAGS =
 
 OBJ=main.o \
 	src/tensor.o \
+	src/tensor_ops.o \
 	src/node.o \
 	src/graph.o \
+	
 
 
 
