@@ -98,75 +98,88 @@ void Add::Backward()
 
     if(a == nullptr || b == nullptr)
     {
-        throw std::runtime_error("ADD back: AAHHHHHH");
+        throw std::runtime_error("ADD back: a or b is nullprt");
     }
     
-
     a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
     b->AllocateGradientMem(m_data->Rows(), m_data->Columns());
-
 
     Tensor* a_grad = a->Gradient(); 
     Tensor* b_grad = b->Gradient(); 
 
-
     *a_grad = op::Add(*a_grad, *m_gradient);
     *b_grad = op::Add(*b_grad, *m_gradient);
-
 }
 
+//SUB
+const std::string Sub::Name(){return "Sub";}
 
-// //SUB
-// const std::string Sub::Name(){return "Sub";}
+void Sub::Forward()
+{
+    //we can assume these nodes exist
+    Tensor* a = m_input_nodes[0]->Data(); 
+    Tensor* b = m_input_nodes[1]->Data(); 
 
-// void Sub::Forward()
-// {
-//     //we can assume these nodes exist
-//     Tensor* a = m_input_nodes[0]->Data(); 
-//     Tensor* b = m_input_nodes[1]->Data(); 
+    if(a == nullptr || b == nullptr)
+    {
+        throw std::runtime_error("SUB: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+    }
 
-//     if(a == nullptr || b == nullptr)
-//     {
-//         throw std::runtime_error("SUB: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
-//     }
+    m_data = new Tensor(op::Sub(*a, *b));
+}
 
-//     m_data = new Tensor(op::Sub(*a, *b));
-// }
+void Sub::Backward()
+{
+    Node* a = m_input_nodes[0];
+    Node* b = m_input_nodes[1];
+    //input nodes gradients
 
-// void Sub::Backward()
-// {
-//     Node* a = m_input_nodes[0];
-//     Node* b = m_input_nodes[1];
-//     //input nodes gradients
+    a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+    b->AllocateGradientMem(m_data->Rows(), m_data->Columns());
 
-//     a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
-//     a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+    Tensor* a_grad = a->Gradient(); 
+    Tensor* b_grad = b->Gradient(); 
 
-//     Tensor* a_grad = a->Gradient(); 
-//     Tensor* b_grad = b->Gradient(); 
+    *a_grad = op::Add(*a_grad, *m_gradient);
+    *b_grad = op::Sub(*b_grad, *m_gradient);
+}
 
-//     *a_grad = op::Add(*a_grad, *m_data);
-//     *b_grad = op::Add(*b_grad, *m_data);
-// }
+//POW
+const std::string Pow::Name(){return "Pow";}
 
-// //POW
-// const std::string Pow::Name(){return "Pow";}
+Pow::Pow(Node * node, double exponent)
+{
+    m_exponent = exponent;
+    Connect(node);
+}
 
-// void Pow::Forward()
-// {
-//     Tensor* a = m_input_nodes[0]->Data();
-//     if(a == nullptr)
-//     {
-//         throw std::runtime_error("POW: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
-//     }
+void Pow::Forward()
+{
+    Tensor* a = m_input_nodes[0]->Data();
+    if(a == nullptr)
+    {
+        throw std::runtime_error("POW: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+    }
     
-//     m_data = new Tensor(op::Pow(*a, m_exponent));
-// }
+    m_data = new Tensor(op::Pow(*a, m_exponent));
+}
 
-// void Pow::Backward()
-// {
-    
-// }
+void Pow::Backward()
+{
+    Node* a = m_input_nodes[0];
+
+    //input nodes gradients
+    a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+
+    Tensor* a_grad = a->Gradient(); 
+    Tensor* a_data = a->Data(); 
+
+    auto pow = op::Pow(*a_data,m_exponent-1);
+    auto mul = op::Mul(pow, m_exponent);
+    auto der = op::Mul(mul, *m_gradient);
+
+    *a_grad = op::Add(*a_grad, der);
+}
 
 // //DOT
 
@@ -192,24 +205,40 @@ void Add::Backward()
 
 // //MUL
 
-// const std::string Mul::Name(){return "Mul";}
+const std::string Mul::Name(){return "Mul";}
 
-// void Mul::Forward()
-// {
-//     Tensor* a = m_input_nodes[0]->Data(); 
-//     Tensor* b = m_input_nodes[1]->Data(); 
+void Mul::Forward()
+{
+    Tensor* a = m_input_nodes[0]->Data(); 
+    Tensor* b = m_input_nodes[1]->Data(); 
 
-//     if(a == nullptr || b == nullptr)
-//     {
-//         throw std::runtime_error("ADD: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
-//     }
-//     m_data = new Tensor(op::Mul(*a, *b));
-// }
+    if(a == nullptr || b == nullptr)
+    {
+        throw std::runtime_error("ADD: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+    }
+    m_data = new Tensor(op::Mul(*a, *b));
+}
 
-// void Mul::Backward()
-// {
-    
-// }
+void Mul::Backward()
+{
+    Node* a = m_input_nodes[0];
+    Node* b = m_input_nodes[1];
+    //input nodes gradients
+
+    a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+    b->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+
+    Tensor* a_grad = a->Gradient(); 
+    Tensor* b_grad = b->Gradient(); 
+    Tensor* a_data = a->Data(); 
+    Tensor* b_data = b->Data(); 
+
+    auto x = op::Mul(*b_data,*m_gradient);
+    auto y = op::Mul(*a_data,*m_gradient);
+
+    *a_grad = op::Add(*a_grad,  x);
+    *b_grad = op::Add(*b_grad, y);
+}
 
 // //Sum
 // Sum::Sum(Node * node)

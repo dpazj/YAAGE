@@ -13,14 +13,12 @@ Tensor* Graph::Forward()
 {
 
     m_visited.clear();
-
     VisitForwards(m_output_node); 
 
     for(const auto& node : m_visited)
     {
         node->Forward();
     }
-
     return m_output_node->Data();  
 }
 
@@ -35,21 +33,6 @@ Tensor* Graph::Backward()
     return m_input_node->Gradient();
 }
 
-void Graph::PopulateExecOrder(Node* start)
-{
-    auto children = start->Children();
-    m_visited.insert(start);
-
-    for(const auto& child : children)
-    {
-        if(m_visited.find(child) == m_visited.end())
-        {
-            m_visited.insert(child);
-            PopulateExecOrder(child);
-        }
-  
-    }
-}
 
 void Graph::VisitForwards(Node* node)
 {
@@ -61,7 +44,6 @@ void Graph::VisitForwards(Node* node)
     {
         if(m_visited.find(child) == m_visited.end())
         {
-            
             m_visited.insert(child);
             VisitForwards(child);
         }

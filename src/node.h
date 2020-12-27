@@ -87,7 +87,7 @@ class Pow : public Node
 {
     public:
         Pow(Node& x, double exponent) : Pow(&x, exponent){};
-        Pow(Node * x, double exponent);
+        Pow(Node* x, double exponent);
         void Forward();
         void Backward();
         const std::string Name();

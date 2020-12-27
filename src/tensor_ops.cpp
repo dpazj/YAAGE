@@ -68,6 +68,21 @@ Tensor Mul(Tensor& a, Tensor& b)
     return c;
 }
 
+Tensor Mul(Tensor& a, double b)
+{
+   
+    Tensor c(a.Rows(), a.Columns());
+
+    double* a_data = a.Data();
+    double* c_data = c.Data();
+
+    for(size_t i=0; i<c.Size(); i++)
+    {
+        c_data[i] = a_data[i] * b;
+    }
+    return c;
+}
+
 Tensor Dot(Tensor& a, Tensor& b)
 {
     size_t M = a.Rows();

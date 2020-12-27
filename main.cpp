@@ -4,29 +4,28 @@
 #include "src/graph.h"
 
 #include <iostream>
+#include <iomanip>
 
 int main()
 {
-      
+    
+    std::cout << std::fixed << std::setprecision(4) << sizeof(double) << std::endl;
     Value x({4.0});
+    
+    Pow y(x,6.0);
+    Pow y1(y, 2.0);
+    Pow y2(y1, 2.0);
 
-    Add y(x,x);
-    Add z(y,x);
-
-    Graph graph(x,z);
+    Graph graph(x,y2);
 
     auto* answer = graph.Forward();
-    if(answer != nullptr)
-    {
-        answer->Print();
-    }
+    
+    std::cout << "y = ";   answer->Print();
     
     auto* gradient_input = graph.Backward();
-    if(gradient_input != nullptr)
-    {
-        gradient_input->Print();
-    }
-                
+    std::cout << "dy/dx = "; gradient_input->Print();
+    
+
 
     return 0;
 
