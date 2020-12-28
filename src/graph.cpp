@@ -13,11 +13,15 @@ Tensor* Graph::Forward()
 {
 
     m_visited.clear();
-    VisitForwards(m_output_node); 
+    m_exec_order.clear();
+    PopulateExecOrder(m_output_node); 
 
-    for(const auto& node : m_visited)
+    for(const auto& node : m_exec_order)
     {
         node->Forward();
+        //std::cout << node->Name() << std::endl;
+        //node->Name();
+
     }
     return m_output_node->Data();  
 }
@@ -27,45 +31,30 @@ Tensor* Graph::Backward()
     Tensor* answer = m_output_node->Data();
     m_output_node->AllocateGradientMem(answer->Rows(), answer->Columns(),1.0f);
     
-    m_visited.clear();
-    VisitBackwards(m_output_node);
-
+    std::reverse(m_exec_order.begin(),m_exec_order.end());
+    for(const auto& node : m_exec_order)
+    {
+        node->Backward();
+    }
     return m_input_node->Gradient();
 }
 
 
-void Graph::VisitForwards(Node* node)
+void Graph::PopulateExecOrder(Node* node)
 {
-    auto children = node->Children();
-
-    m_visited.insert(node);
-
-    for(const auto& child : children)
+    if(m_visited.find(node) == m_visited.end()) //if child not in visited
     {
-        if(m_visited.find(child) == m_visited.end())
+        m_visited.insert(node);
+        
+        for(const auto& child : node->Children())
         {
-            m_visited.insert(child);
-            VisitForwards(child);
+            PopulateExecOrder(child);
         }
+        m_exec_order.push_back(node);
     }
-}
+    
+} 
+    
 
-void Graph::VisitBackwards(Node* node)
-{
-    auto children = node->Children();
-    node->Backward();
-
-    m_visited.insert(node);
-
-    for(const auto& child : children)
-    {
-        if(m_visited.find(child) == m_visited.end())
-        {
-            
-            m_visited.insert(child);
-            VisitBackwards(child);
-        }
-    }
-}
 
 

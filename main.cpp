@@ -6,26 +6,62 @@
 #include <iostream>
 #include <iomanip>
 
+
+void TestReLU()
+{
+    Value x({6.0});
+
+    ReLU y(x);
+
+    Graph g(x, y);
+
+    auto* answer = g.Forward();
+    std::cout << "y = ";   answer->Print();
+    auto* gradient_input = g.Backward();
+    std::cout << "dy/dx = "; gradient_input->Print();
+}
+
+void SanityTest()
+{
+    //https://github.com/karpathy/micrograd/blob/master/test/test_engine.py
+    Value x({-4.0});
+    Value two({2.0});
+
+    //z
+    Mul x_mul_two(x,two);
+    Add x_add_two(x,two);
+    Add z(x_mul_two, x_add_two); 
+
+    //q
+    ReLU z_relu(z);
+    Mul z_mul_x(z,x);
+    Add q(z_mul_x, z_relu);
+
+    //h
+    Mul z_mul_z(z,z);
+    ReLU h(z_mul_z);
+
+    //y
+    Mul q_mul_x(q,x);
+    Add q_add_qmulx(q_mul_x,q);
+    Add y(q_add_qmulx, h);
+  
+    Graph graph(x,y);
+    graph.Forward();
+    auto* answer = graph.Forward();
+    std::cout << "y should be -20, y = ";   answer->Print();
+    auto* gradient_input = graph.Backward();
+    std::cout << "dy/dx should be 46, dy/dx = "; gradient_input->Print();
+    
+}
+
 int main()
 {
-    
-    std::cout << std::fixed << std::setprecision(4) << sizeof(double) << std::endl;
-    Value x({4.0});
-    
-    Pow y(x,6.0);
-    Pow y1(y, 2.0);
-    Pow y2(y1, 2.0);
+    std::cout << std::fixed << std::setprecision(4) << std::endl;
 
-    Graph graph(x,y2);
-
-    auto* answer = graph.Forward();
     
-    std::cout << "y = ";   answer->Print();
-    
-    auto* gradient_input = graph.Backward();
-    std::cout << "dy/dx = "; gradient_input->Print();
-    
-
+    //TestReLU();
+    SanityTest();
 
     return 0;
 

@@ -141,4 +141,17 @@ Tensor Sum(Tensor& a)
     return c;
 }
 
+
+Tensor Max(Tensor& a, double val)
+{
+    Tensor c(a.Rows(), a.Columns());
+    double* a_data = a.Data();
+    double * c_data = c.Data();
+    for(size_t i=0; i<a.Size(); i++)
+    {
+        c_data[i] = std::max(a_data[i], val);
+    }
+    return c;
+}
+
 } //namespace op

@@ -124,3 +124,13 @@ class Sum : public Node
         void Backward();
         const std::string Name();
 };
+
+class ReLU : public Node
+{
+    public:
+        ReLU(Node& x) : ReLU(&x){};
+        ReLU(Node * x); 
+        void Forward();
+        void Backward();
+        const std::string Name();
+};

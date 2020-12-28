@@ -22,9 +22,6 @@ class Graph
         void PopulateExecOrder(Node * node);
  
         std::unordered_set<Node*> m_visited;
-
-        void VisitBackwards(Node * node);
-        void VisitForwards(Node * node);
-
+        std::vector<Node *> m_exec_order;
 
 };

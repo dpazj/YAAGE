@@ -8,7 +8,8 @@ class Tensor
 {
     public:
         Tensor(const Tensor& tensor);
-        Tensor(size_t m, size_t n=1, double init_val = 0.0f);
+        Tensor(size_t m, size_t n);
+        Tensor(size_t m, size_t n, double init_val);
         Tensor(std::initializer_list<std::initializer_list<double>> il);
         Tensor(std::initializer_list<double> il);
 

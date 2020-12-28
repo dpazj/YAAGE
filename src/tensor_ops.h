@@ -10,5 +10,7 @@ namespace op
     Tensor Sum(Tensor& a);
 
     Tensor Pow(Tensor& a, double exp);
+
+    Tensor Max(Tensor& a, double val);
     
 }

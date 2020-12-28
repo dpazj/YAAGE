@@ -263,3 +263,45 @@ void Mul::Backward()
 // {
     
 // }
+
+//ReLU
+ReLU::ReLU(Node* node)
+{
+    Connect(node);
+}
+
+const std::string ReLU::Name(){return "Relu";}
+
+void ReLU::Forward()
+{
+    Tensor* a = m_input_nodes[0]->Data(); 
+
+    if(a == nullptr)
+    {
+        throw std::runtime_error("Relu: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+    }
+    m_data = new Tensor(op::Max(*a,0.0f));
+}
+
+void ReLU::Backward()
+{
+    Node* a = m_input_nodes[0];
+
+    a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+
+    Tensor* a_grad = a->Gradient(); 
+    Tensor* a_data = a->Data(); 
+
+    Tensor tmp(a_data->Rows(), a_data->Columns());
+    double* tmp_data = tmp.Data();
+    double* a_data_ptr = a_data->Data();
+
+    for(size_t i=0; i<tmp.Size();i++)
+    { 
+        tmp_data[i] = a_data_ptr[i] > 0 ? 1.0f : 0.0f;
+    }
+
+    auto grad = op::Mul(*m_gradient, *tmp_data);
+
+    *a_grad = op::Add(*a_grad, grad);
+}

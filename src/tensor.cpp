@@ -48,6 +48,14 @@ Tensor::Tensor(std::initializer_list<double> il)
     }
 }
 
+Tensor::Tensor(size_t m, size_t n)
+{
+    m_rows = m;
+    m_columns = n;
+    m_size = m_rows * m_rows;
+    m_data = new double[m_size];
+}
+
 Tensor::Tensor(size_t m, size_t n, double init_val)
 {
     m_rows = m;
