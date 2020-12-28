@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tensor.h"
+#include "matrix.h"
 
 #include <vector>
 #include <memory>
@@ -16,8 +16,8 @@ class Node
         virtual void Forward() = 0;
         virtual void Backward() = 0;  
 
-        Tensor* Data();
-        Tensor* Gradient();
+        Matrix* Data();
+        Matrix* Gradient();
         std::vector<Node*> Children();
 
         void AllocateGradientMem(size_t row, size_t col, double val = 0.0f);
@@ -28,8 +28,8 @@ class Node
         std::vector<Node*> m_input_nodes;
         std::vector<Node*> m_output_nodes;
         
-        Tensor* m_data = nullptr;
-        Tensor* m_gradient = nullptr;
+        Matrix* m_data = nullptr;
+        Matrix* m_gradient = nullptr;
 
         bool m_owns_memory = true;
     private:
@@ -48,10 +48,10 @@ class TwoInputNode : public Node
 class Value : public Node
 {
     public:
-        Value(Tensor& val) : Value(&val){};
+        Value(Matrix& val) : Value(&val){};
         Value(std::initializer_list<double> il);
         Value(std::initializer_list<std::initializer_list<double>> il);
-        Value(Tensor* val);
+        Value(Matrix* val);
 
         void Forward();
         void Backward();

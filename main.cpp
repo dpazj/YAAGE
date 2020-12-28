@@ -1,5 +1,5 @@
-#include "src/tensor.h"
-#include "src/tensor_ops.h"
+#include "src/matrix.h"
+#include "src/matrix_ops.h"
 #include "src/node.h"
 #include "src/graph.h"
 
@@ -7,23 +7,10 @@
 #include <iomanip>
 
 
-void TestReLU()
-{
-    Value x({6.0});
 
-    ReLU y(x);
-
-    Graph g(x, y);
-
-    auto* answer = g.Forward();
-    std::cout << "y = ";   answer->Print();
-    auto* gradient_input = g.Backward();
-    std::cout << "dy/dx = "; gradient_input->Print();
-}
 
 void SanityTest()
 {
-    //https://github.com/karpathy/micrograd/blob/master/test/test_engine.py
     Value x({-4.0});
     Value two({2.0});
 
@@ -55,14 +42,14 @@ void SanityTest()
     
 }
 
+
+
 int main()
 {
-    std::cout << std::fixed << std::setprecision(4) << std::endl;
+    std::cout << std::fixed << std::setprecision(4);
 
-    
-    //TestReLU();
     SanityTest();
-
+    
     return 0;
 
 }

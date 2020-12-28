@@ -1,4 +1,4 @@
-#include "tensor_ops.h"
+#include "matrix_ops.h"
 
 #include <stdexcept>
 #include <iostream>
@@ -8,14 +8,14 @@
 namespace op
 {
 
-Tensor Add(Tensor& a, Tensor& b)
+Matrix Add(Matrix& a, Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
         throw std::runtime_error("add: Tensors not of the same shape!");
     }
 
-    Tensor c(a.Rows(), a.Columns());
+    Matrix c(a.Rows(), a.Columns());
 
     double* a_data = a.Data();
     double* b_data = b.Data();
@@ -28,14 +28,14 @@ Tensor Add(Tensor& a, Tensor& b)
     return c;
 }
 
-Tensor Sub(Tensor& a, Tensor& b)
+Matrix Sub(Matrix& a, Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
         throw std::runtime_error("Sub: Tensors not of the same shape!");
     }
 
-    Tensor c(a.Rows(), a.Columns());
+    Matrix c(a.Rows(), a.Columns());
 
     double* a_data = a.Data();
     double* b_data = b.Data();
@@ -48,14 +48,14 @@ Tensor Sub(Tensor& a, Tensor& b)
     return c;
 }
 
-Tensor Mul(Tensor& a, Tensor& b)
+Matrix Mul(Matrix& a, Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
         throw std::runtime_error("Mul: Tensors not of the same shape!");
     }
 
-    Tensor c(a.Rows(), a.Columns());
+    Matrix c(a.Rows(), a.Columns());
 
     double* a_data = a.Data();
     double* b_data = b.Data();
@@ -68,10 +68,10 @@ Tensor Mul(Tensor& a, Tensor& b)
     return c;
 }
 
-Tensor Mul(Tensor& a, double b)
+Matrix Mul(Matrix& a, double b)
 {
    
-    Tensor c(a.Rows(), a.Columns());
+    Matrix c(a.Rows(), a.Columns());
 
     double* a_data = a.Data();
     double* c_data = c.Data();
@@ -83,7 +83,7 @@ Tensor Mul(Tensor& a, double b)
     return c;
 }
 
-Tensor Dot(Tensor& a, Tensor& b)
+Matrix Dot(Matrix& a, Matrix& b)
 {
     size_t M = a.Rows();
     size_t K = a.Columns();
@@ -91,10 +91,10 @@ Tensor Dot(Tensor& a, Tensor& b)
 
     if(a.Columns() != b.Rows())
     {
-        throw std::runtime_error("dot: Tensors a rows != Tensor b columns!");
+        throw std::runtime_error("dot: Tensors a rows != Matrix b columns!");
     }
 
-    Tensor c(M,N);
+    Matrix c(M,N);
 
     for(size_t i=0; i<M;i++)
     {
@@ -111,10 +111,10 @@ Tensor Dot(Tensor& a, Tensor& b)
     return c;
 }
 
-Tensor Pow(Tensor& a, double exp)
+Matrix Pow(Matrix& a, double exp)
 {
     
-    Tensor c(a.Rows(), a.Columns());
+    Matrix c(a.Rows(), a.Columns());
     double* a_data = a.Data();
     double* c_data = c.Data();
 
@@ -125,10 +125,10 @@ Tensor Pow(Tensor& a, double exp)
     return c;
 }
 
-Tensor Sum(Tensor& a)
+Matrix Sum(Matrix& a)
 {
     
-    Tensor c(1, 1);
+    Matrix c(1, 1);
     double* a_data = a.Data();
 
     double acc = 0.0f;
@@ -142,9 +142,9 @@ Tensor Sum(Tensor& a)
 }
 
 
-Tensor Max(Tensor& a, double val)
+Matrix Max(Matrix& a, double val)
 {
-    Tensor c(a.Rows(), a.Columns());
+    Matrix c(a.Rows(), a.Columns());
     double* a_data = a.Data();
     double * c_data = c.Data();
     for(size_t i=0; i<a.Size(); i++)

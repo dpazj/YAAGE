@@ -1,16 +1,16 @@
-#include "tensor.h"
+#include "matrix.h"
 #include <iostream>
 #include <cstring>
 
-Tensor::Tensor(const Tensor& tensor)
+Matrix::Matrix(const Matrix& matrix)
 {
-    m_rows = tensor.m_rows;
-    m_columns = tensor.m_columns;
-    m_size = tensor.m_size;
-    std::memcpy(m_data, tensor.m_data, m_size * sizeof(double));
+    m_rows = matrix.m_rows;
+    m_columns = matrix.m_columns;
+    m_size = matrix.m_size;
+    std::memcpy(m_data, matrix.m_data, m_size * sizeof(double));
 }
 
-Tensor::Tensor(std::initializer_list<std::initializer_list<double>> il)
+Matrix::Matrix(std::initializer_list<std::initializer_list<double>> il)
 {
     m_rows = il.size();
     m_columns =  il.begin()->size();
@@ -22,7 +22,7 @@ Tensor::Tensor(std::initializer_list<std::initializer_list<double>> il)
     {
         size_t j = 0;
         if(row.size() != m_columns){
-            throw std::runtime_error("Tensor rows must be of the same length!");
+            throw std::runtime_error("Matrix rows must be of the same length!");
         }
         for(auto col : row)
         {
@@ -33,7 +33,7 @@ Tensor::Tensor(std::initializer_list<std::initializer_list<double>> il)
     }
 }
 
-Tensor::Tensor(std::initializer_list<double> il)
+Matrix::Matrix(std::initializer_list<double> il)
 {
     m_rows = 1;
     m_columns = il.size();
@@ -48,7 +48,7 @@ Tensor::Tensor(std::initializer_list<double> il)
     }
 }
 
-Tensor::Tensor(size_t m, size_t n)
+Matrix::Matrix(size_t m, size_t n)
 {
     m_rows = m;
     m_columns = n;
@@ -56,7 +56,7 @@ Tensor::Tensor(size_t m, size_t n)
     m_data = new double[m_size];
 }
 
-Tensor::Tensor(size_t m, size_t n, double init_val)
+Matrix::Matrix(size_t m, size_t n, double init_val)
 {
     m_rows = m;
     m_columns = n;
@@ -69,7 +69,7 @@ Tensor::Tensor(size_t m, size_t n, double init_val)
     }
 }
 
-Tensor::~Tensor()
+Matrix::~Matrix()
 {
     if(m_data != nullptr)
     {
@@ -77,13 +77,13 @@ Tensor::~Tensor()
     }
 }
 
-size_t Tensor::Columns(){return m_columns;}
-size_t Tensor::Rows(){return m_rows;}
-size_t Tensor::Size(){return m_size;}
-double* Tensor::Data(){return m_data;}
+size_t Matrix::Columns(){return m_columns;}
+size_t Matrix::Rows(){return m_rows;}
+size_t Matrix::Size(){return m_size;}
+double* Matrix::Data(){return m_data;}
 
 
-void Tensor::Print()
+void Matrix::Print()
 {
     for(size_t i=0;i<m_rows;i++)
     {
@@ -97,12 +97,12 @@ void Tensor::Print()
     std::cout << std::endl;
 }
 
-double* Tensor::operator[](size_t i) //get the row
+double* Matrix::operator[](size_t i) //get the row
 {
     return m_data + (i * m_columns);
 }
 
-Tensor& Tensor::operator=(const Tensor& rhs)
+Matrix& Matrix::operator=(const Matrix& rhs)
 {
     if(m_data != nullptr)
     {

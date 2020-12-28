@@ -4,16 +4,16 @@ typedef unsigned long size_t;
 
 #include <initializer_list>
 
-class Tensor
+class Matrix
 {
     public:
-        Tensor(const Tensor& tensor);
-        Tensor(size_t m, size_t n);
-        Tensor(size_t m, size_t n, double init_val);
-        Tensor(std::initializer_list<std::initializer_list<double>> il);
-        Tensor(std::initializer_list<double> il);
+        Matrix(const Matrix& matrix);
+        Matrix(size_t m, size_t n);
+        Matrix(size_t m, size_t n, double init_val);
+        Matrix(std::initializer_list<std::initializer_list<double>> il);
+        Matrix(std::initializer_list<double> il);
 
-        ~Tensor();
+        ~Matrix();
 
         size_t Columns();
         size_t Rows();
@@ -24,7 +24,7 @@ class Tensor
         void Print();
         
         double* operator[](size_t i);
-        Tensor& operator=(const Tensor& rhs);
+        Matrix& operator=(const Matrix& rhs);
 
     private:
         double* m_data = nullptr;

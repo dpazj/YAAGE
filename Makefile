@@ -1,27 +1,24 @@
 
-INCLUDE = -I/usr/local/include/NumCpp/
 
 CXX = g++
 
 CFLAGS = -Wall -Werror
-CPPFLAGS = $(CFLAGS) $(INCLUDE)
+CPPFLAGS = $(CFLAGS)
 
 LDFLAGS = 
 
 
 OBJ=main.o \
-	src/tensor.o \
-	src/tensor_ops.o \
+	src/matrix.o \
+	src/matrix_ops.o \
 	src/node.o \
 	src/graph.o \
 	
 
-
-
 %.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CPPFLAGS)
 
-test: $(OBJ)
+main: $(OBJ)
 	$(CXX) $(OBJ) -o main $(LDFLAGS) 
 
 run:

@@ -9,7 +9,7 @@ Graph::Graph(Node * input, Node * output)
     m_output_node = output;
 }
 
-Tensor* Graph::Forward()
+Matrix* Graph::Forward()
 {
 
     m_visited.clear();
@@ -19,16 +19,13 @@ Tensor* Graph::Forward()
     for(const auto& node : m_exec_order)
     {
         node->Forward();
-        //std::cout << node->Name() << std::endl;
-        //node->Name();
-
     }
     return m_output_node->Data();  
 }
 
-Tensor* Graph::Backward()
+Matrix* Graph::Backward()
 {
-    Tensor* answer = m_output_node->Data();
+    Matrix* answer = m_output_node->Data();
     m_output_node->AllocateGradientMem(answer->Rows(), answer->Columns(),1.0f);
     
     std::reverse(m_exec_order.begin(),m_exec_order.end());
@@ -52,9 +49,5 @@ void Graph::PopulateExecOrder(Node* node)
         }
         m_exec_order.push_back(node);
     }
-    
 } 
     
-
-
-
