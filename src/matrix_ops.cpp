@@ -8,7 +8,7 @@
 namespace op
 {
 
-Matrix Add(Matrix& a, Matrix& b)
+Matrix Add(const Matrix& a, const Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
@@ -28,7 +28,7 @@ Matrix Add(Matrix& a, Matrix& b)
     return c;
 }
 
-Matrix Sub(Matrix& a, Matrix& b)
+Matrix Sub(const Matrix& a, const Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
@@ -48,7 +48,7 @@ Matrix Sub(Matrix& a, Matrix& b)
     return c;
 }
 
-Matrix Mul(Matrix& a, Matrix& b)
+Matrix Mul(const Matrix& a, const Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
@@ -68,7 +68,7 @@ Matrix Mul(Matrix& a, Matrix& b)
     return c;
 }
 
-Matrix Mul(Matrix& a, double b)
+Matrix Mul(const Matrix& a, double b)
 {
    
     Matrix c(a.Rows(), a.Columns());
@@ -83,7 +83,7 @@ Matrix Mul(Matrix& a, double b)
     return c;
 }
 
-Matrix Dot(Matrix& a, Matrix& b)
+Matrix Dot(const Matrix& a, const Matrix& b)
 {
     size_t M = a.Rows();
     size_t K = a.Columns();
@@ -93,25 +93,30 @@ Matrix Dot(Matrix& a, Matrix& b)
     {
         throw std::runtime_error("dot: Tensors a rows != Matrix b columns!");
     }
-
     Matrix c(M,N);
+    double* a_data = a.Data();
+    double* b_data = b.Data();
+    double* c_data = c.Data();
 
     for(size_t i=0; i<M;i++)
     {
         for (size_t j = 0; j < N; j++)
         {
             double acc = 0.0f;
+
+            size_t a_offset = K * i;
+
             for (size_t k = 0; k < K; k++)
             {
-                acc += a[i][k] * b[k][j];
+                acc += a_data[a_offset + k] * b_data[k * N + j];
             }
-            c[i][j] = acc;
+            c_data[(i*N) + j] = acc;
         }
     }
     return c;
 }
 
-Matrix Pow(Matrix& a, double exp)
+Matrix Pow(const Matrix& a, double exp)
 {
     
     Matrix c(a.Rows(), a.Columns());
@@ -125,24 +130,7 @@ Matrix Pow(Matrix& a, double exp)
     return c;
 }
 
-Matrix Sum(Matrix& a)
-{
-    
-    Matrix c(1, 1);
-    double* a_data = a.Data();
-
-    double acc = 0.0f;
-    
-    for(size_t i=0; i<a.Size(); i++)
-    {
-        acc += a_data[i];
-    }
-    c[0][0] = acc;
-    return c;
-}
-
-
-Matrix Max(Matrix& a, double val)
+Matrix Max(const Matrix& a, double val)
 {
     Matrix c(a.Rows(), a.Columns());
     double* a_data = a.Data();
@@ -152,6 +140,24 @@ Matrix Max(Matrix& a, double val)
         c_data[i] = std::max(a_data[i], val);
     }
     return c;
+}
+
+Matrix Transpose(const Matrix& a)
+{
+    Matrix a_t(a.Columns(), a.Rows());
+    double * a_t_data = a_t.Data();
+    double * a_data = a.Data();
+
+    for(size_t i=0; i<a.Rows(); i++)
+    {
+        size_t a_offset = i * a.Columns();
+        for (size_t j = 0; j < a.Columns(); j++)
+        {
+            a_t_data[j * a_t.Columns() +  i] = a_data[a_offset + j];
+        }
+        
+    }
+    return a_t;
 }
 
 } //namespace op

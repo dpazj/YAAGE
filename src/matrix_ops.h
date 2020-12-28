@@ -2,15 +2,14 @@
 
 namespace op
 {
-    Matrix Add(Matrix& a, Matrix& b);
-    Matrix Sub(Matrix& a, Matrix& b);
-    Matrix Mul(Matrix& a, Matrix& b);
-    Matrix Mul(Matrix& a, double b);
-    Matrix Dot(Matrix& a, Matrix& b);
-    Matrix Sum(Matrix& a);
+    Matrix Add(const Matrix& a, const Matrix& b);
+    Matrix Sub(const Matrix& a, const Matrix& b);
+    Matrix Mul(const Matrix& a, const Matrix& b);
+    Matrix Mul(const Matrix& a, double b);
+    Matrix Dot(const Matrix& a, const Matrix& b);
 
-    Matrix Pow(Matrix& a, double exp);
-
-    Matrix Max(Matrix& a, double val);
+    Matrix Pow(const Matrix& a, double exp);
+    Matrix Max(const Matrix& a, double val);
+    Matrix Transpose(const Matrix& a);
     
 }

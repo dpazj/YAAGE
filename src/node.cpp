@@ -46,7 +46,6 @@ TwoInputNode::TwoInputNode(Node * x, Node * y)
     Connect(y);
 }
 
-
 //Value
 const std::string Value::Name(){return "Value";}
 
@@ -133,7 +132,6 @@ void Sub::Backward()
     Node* a = m_input_nodes[0];
     Node* b = m_input_nodes[1];
     //input nodes gradients
-
     a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
     b->AllocateGradientMem(m_data->Rows(), m_data->Columns());
 
@@ -174,36 +172,46 @@ void Pow::Backward()
     Matrix* a_grad = a->Gradient(); 
     Matrix* a_data = a->Data(); 
 
-    auto pow = op::Pow(*a_data,m_exponent-1);
-    auto mul = op::Mul(pow, m_exponent);
-    auto der = op::Mul(mul, *m_gradient);
+    auto der = op::Mul(op::Mul(op::Pow(*a_data,m_exponent-1), m_exponent), *m_gradient);
 
     *a_grad = op::Add(*a_grad, der);
 }
 
-// //DOT
+//DOT
 
-// const std::string Dot::Name(){return "Dot";}
+const std::string Dot::Name(){return "Dot";}
 
-// void Dot::Forward()
-// {
-//     //we can assume these exist
-//     Matrix* a = m_input_nodes[0]->Data(); 
-//     Matrix* b = m_input_nodes[1]->Data(); 
+void Dot::Forward()
+{
+    //we can assume these exist
+    Matrix* a = m_input_nodes[0]->Data(); 
+    Matrix* b = m_input_nodes[1]->Data(); 
 
-//     if(a == nullptr || b == nullptr)
-//     {
-//         throw std::runtime_error("Dot: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
-//     }
-//     m_data = new Matrix(op::Dot(*a, *b));
-// }
+    if(a == nullptr || b == nullptr)
+    {
+        throw std::runtime_error("Dot: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
+    }
+    m_data = new Matrix(op::Dot(*a, *b));
+}
 
-// void Dot::Backward()
-// {
-    
-// }
+void Dot::Backward()
+{
+    Node* a = m_input_nodes[0];
+    Node* b = m_input_nodes[1];
+    //input nodes gradients
+    a->AllocateGradientMem(m_data->Rows(), m_data->Columns());
+    b->AllocateGradientMem(m_data->Rows(), m_data->Columns());
 
-// //MUL
+    Matrix* a_grad = a->Gradient(); 
+    Matrix* b_grad = b->Gradient(); 
+    Matrix* a_data = a->Data(); 
+    Matrix* b_data = b->Data(); 
+
+    *a_grad = op::Add(*a_grad, op::Dot(*m_gradient, op::Transpose(*b_data)));
+    *b_grad = op::Add(*b_grad, op::Dot(op::Transpose(*a_data), *m_gradient));
+}
+
+//MUL
 
 const std::string Mul::Name(){return "Mul";}
 
@@ -233,36 +241,10 @@ void Mul::Backward()
     Matrix* a_data = a->Data(); 
     Matrix* b_data = b->Data(); 
 
-    auto x = op::Mul(*b_data,*m_gradient);
-    auto y = op::Mul(*a_data,*m_gradient);
-
-    *a_grad = op::Add(*a_grad,  x);
-    *b_grad = op::Add(*b_grad, y);
+    *a_grad = op::Add(*a_grad,  op::Mul(*b_data,*m_gradient));
+    *b_grad = op::Add(*b_grad, op::Mul(*a_data,*m_gradient));
 }
 
-// //Sum
-// Sum::Sum(Node * node)
-// {
-//     Connect(node);
-// }
-
-// const std::string Sum::Name(){return "Mul";}
-
-// void Sum::Forward()
-// {
-//     Matrix* a = m_input_nodes[0]->Data(); 
-
-//     if(a == nullptr)
-//     {
-//         throw std::runtime_error("Sum: Data of input nodes == nullptr. Check nodes are connected properly : ) ");
-//     }
-//     m_data = new Matrix(op::Sum(*a));
-// }
-
-// void Sum::Backward()
-// {
-    
-// }
 
 //ReLU
 ReLU::ReLU(Node* node)
@@ -301,7 +283,5 @@ void ReLU::Backward()
         tmp_data[i] = a_data_ptr[i] > 0 ? 1.0f : 0.0f;
     }
 
-    auto grad = op::Mul(*m_gradient, *tmp_data);
-
-    *a_grad = op::Add(*a_grad, grad);
+    *a_grad = op::Add(*a_grad, op::Mul(*m_gradient, *tmp_data));
 }

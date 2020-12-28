@@ -15,15 +15,14 @@ class Matrix
 
         ~Matrix();
 
-        size_t Columns();
-        size_t Rows();
-        size_t Size();
+        size_t Columns() const;
+        size_t Rows() const;
+        size_t Size() const;
 
-        double* Data();
+        double* Data()const;
 
         void Print();
         
-        double* operator[](size_t i);
         Matrix& operator=(const Matrix& rhs);
 
     private:

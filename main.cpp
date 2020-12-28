@@ -8,12 +8,10 @@
 
 
 
-
 void SanityTest()
 {
     Value x({-4.0});
     Value two({2.0});
-
     //z
     Mul x_mul_two(x,two);
     Add x_add_two(x,two);
@@ -42,13 +40,24 @@ void SanityTest()
     
 }
 
+void OtherTest()
+{
+    Value x({-4.0});
+
+    auto y = x + x + x;
+
+    Graph g(x,y);
+    g.Forward();
+    auto* answer = g.Forward();
+    std::cout << "y should be 12, y = ";   answer->Print();
+}
+
 
 
 int main()
 {
-    std::cout << std::fixed << std::setprecision(4);
-
-    SanityTest();
+    OtherTest();
+    //SanityTest();
     
     return 0;
 

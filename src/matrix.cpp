@@ -77,10 +77,10 @@ Matrix::~Matrix()
     }
 }
 
-size_t Matrix::Columns(){return m_columns;}
-size_t Matrix::Rows(){return m_rows;}
-size_t Matrix::Size(){return m_size;}
-double* Matrix::Data(){return m_data;}
+size_t Matrix::Columns()const{return m_columns;}
+size_t Matrix::Rows()const{return m_rows;}
+size_t Matrix::Size()const{return m_size;}
+double* Matrix::Data()const{return m_data;}
 
 
 void Matrix::Print()
@@ -97,10 +97,6 @@ void Matrix::Print()
     std::cout << std::endl;
 }
 
-double* Matrix::operator[](size_t i) //get the row
-{
-    return m_data + (i * m_columns);
-}
 
 Matrix& Matrix::operator=(const Matrix& rhs)
 {

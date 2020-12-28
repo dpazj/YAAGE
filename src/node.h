@@ -22,6 +22,7 @@ class Node
 
         void AllocateGradientMem(size_t row, size_t col, double val = 0.0f);
 
+
     protected:
         void Connect(Node* node);
                 
