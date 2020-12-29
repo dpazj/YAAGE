@@ -7,7 +7,6 @@
 #include <iomanip>
 
 
-
 void SanityTest()
 {
     Value x({-4.0});
@@ -40,24 +39,12 @@ void SanityTest()
     
 }
 
-void OtherTest()
-{
-    Value x({-4.0});
-
-    auto y = x + x + x;
-
-    Graph g(x,y);
-    g.Forward();
-    auto* answer = g.Forward();
-    std::cout << "y should be 12, y = ";   answer->Print();
-}
-
 
 
 int main()
 {
-    OtherTest();
-    //SanityTest();
+  
+
     
     return 0;
 
