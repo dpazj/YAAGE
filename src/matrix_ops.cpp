@@ -12,7 +12,7 @@ Matrix Add(const Matrix& a, const Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
-        throw std::runtime_error("add: Tensors not of the same shape!");
+        throw std::runtime_error("add:  Matricies not of the same shape!");
     }
 
     Matrix c(a.Rows(), a.Columns());
@@ -32,7 +32,7 @@ Matrix Sub(const Matrix& a, const Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
-        throw std::runtime_error("Sub: Tensors not of the same shape!");
+        throw std::runtime_error("Sub:  Matricies not of the same shape!");
     }
 
     Matrix c(a.Rows(), a.Columns());
@@ -52,7 +52,7 @@ Matrix Mul(const Matrix& a, const Matrix& b)
 {
     if(a.Columns() != b.Columns() || a.Rows() != b.Rows())
     {
-        throw std::runtime_error("Mul: Tensors not of the same shape!");
+        throw std::runtime_error("Mul: Matricies not of the same shape!");
     }
 
     Matrix c(a.Rows(), a.Columns());
@@ -91,7 +91,7 @@ Matrix Dot(const Matrix& a, const Matrix& b)
 
     if(a.Columns() != b.Rows())
     {
-        throw std::runtime_error("dot: Tensors a rows != Matrix b columns!");
+        throw std::runtime_error("dot: Matrix a rows != Matrix b columns!");
     }
     Matrix c(M,N);
     double* a_data = a.Data();

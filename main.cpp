@@ -1,50 +1,65 @@
-#include "src/matrix.h"
-#include "src/matrix_ops.h"
-#include "src/node.h"
-#include "src/graph.h"
+// #include "src/matrix.h"
+// #include "src/matrix_ops.h"
+// #include "src/node.h"
+// #include "src/graph.h"
 
 #include <iostream>
 #include <iomanip>
 
+#include "nuuue/nue.h"
 
-void SanityTest()
-{
-    Value x({-4.0});
-    Value two({2.0});
-    //z
-    Mul x_mul_two(x,two);
-    Add x_add_two(x,two);
-    Add z(x_mul_two, x_add_two); 
+// void SanityTest()
+// {
+//     Value x({-4.0});
+//     Value two({2.0});
+//     //z
+//     Mul x_mul_two(x,two);
+//     Add x_add_two(x,two);
+//     Add z(x_mul_two, x_add_two); 
 
-    //q
-    ReLU z_relu(z);
-    Mul z_mul_x(z,x);
-    Add q(z_mul_x, z_relu);
+//     //q
+//     ReLU z_relu(z);
+//     Mul z_mul_x(z,x);
+//     Add q(z_mul_x, z_relu);
 
-    //h
-    Mul z_mul_z(z,z);
-    ReLU h(z_mul_z);
+//     //h
+//     Mul z_mul_z(z,z);
+//     ReLU h(z_mul_z);
 
-    //y
-    Mul q_mul_x(q,x);
-    Add q_add_qmulx(q_mul_x,q);
-    Add y(q_add_qmulx, h);
+//     //y
+//     Mul q_mul_x(q,x);
+//     Add q_add_qmulx(q_mul_x,q);
+//     Add y(q_add_qmulx, h);
   
-    Graph graph(x,y);
-    graph.Forward();
-    auto* answer = graph.Forward();
-    std::cout << "y should be -20, y = ";   answer->Print();
-    auto* gradient_input = graph.Backward();
-    std::cout << "dy/dx should be 46, dy/dx = "; gradient_input->Print();
+//     Graph graph(x,y);
+//     graph.Forward();
+//     auto* answer = graph.Forward();
+//     std::cout << "y should be -20, y = ";   answer->Print();
+//     auto* gradient_input = graph.Backward();
+//     std::cout << "dy/dx should be 46, dy/dx = "; gradient_input->Print();
     
-}
+// }
 
+
+void new_test()
+{
+    tensor input = {4.0};
+    
+    node x(input);
+    node y = x + x + x + x + x;
+    graph g(x,y);
+    // std::cout << "h" << std::endl;
+    g.forwards();
+    g.backwards();
+
+}
 
 
 int main()
 {
   
-
+    //SanityTest();
+    new_test();
     
     return 0;
 
