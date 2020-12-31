@@ -41,17 +41,24 @@
 // }
 
 
-void new_test()
+void sanity_test()
 {
-    tensor input = {4.0};
+    tensor input = {-4.0};
+    tensor input1 = {2.0};
     
     node x(input);
-    node y = x + x + x + x;
+    node two(input1);
+
+    node z = two * x + two + x;
+    node q = z.relu() + z * x;
+    node h = (z * z).relu();
+    node y = h + q + q * x; 
 
     graph g(x,y);
-    // std::cout << "h" << std::endl;
+
     g.forwards();
     g.backwards();
+
 
 }
 
@@ -60,7 +67,7 @@ int main()
 {
   
     //SanityTest();
-    new_test();
+    sanity_test();
     
     return 0;
 

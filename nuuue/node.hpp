@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tensor.hpp"
+#include "tensor_ops.hpp"
 
 #include <functional>
 #include <vector>
@@ -20,9 +21,14 @@ class node
         tensor* data();
         tensor* gradient();
         std::vector<node*> children();
+        
 
+        //operators
         node& operator=(const node& rhs);
         node& operator+(node& rhs);
+        node& operator*(node& rhs);
+
+        node& relu();
 
     private:
         void add_child(node *);
@@ -109,6 +115,7 @@ node& node::operator=(const node& rhs)
     return *this;
 }
 
+
 node& node::operator+(node& rhs)
 {
     node* out = create_node();
@@ -130,6 +137,65 @@ node& node::operator+(node& rhs)
     std::function<void()> backward = [out_gradient, a_gradient, b_gradient](){
         *a_gradient = a_gradient->size() == 0 ? *out_gradient : *a_gradient + *out_gradient;
         *b_gradient = b_gradient->size() == 0 ? *out_gradient : *b_gradient + *out_gradient;
+    };
+
+    out->m_forward = forward;
+    out->m_backward = backward;
+
+    return *out;
+}
+
+node& node::operator*(node& rhs)
+{
+    node* out = create_node();
+
+    out->add_child(this);
+    out->add_child(&rhs);
+
+    tensor* a_data = m_data;
+    tensor* a_gradient = m_gradient;
+    tensor* b_data = rhs.m_data;
+    tensor* b_gradient = rhs.m_gradient;
+    tensor* out_data = out->m_data;
+    tensor* out_gradient = out->m_gradient;
+
+    std::function<void()> forward = [out_data, a_data, b_data](){ 
+        *out_data = *a_data * *b_data;
+    };
+
+    std::function<void()> backward = [out_gradient, a_gradient, b_gradient, b_data, a_data](){
+        auto a_grad = *out_gradient * *b_data;
+        auto b_grad = *out_gradient * *a_data;
+
+        *a_gradient = a_gradient->size() == 0 ? a_grad : *a_gradient + a_grad;
+        *b_gradient = b_gradient->size() == 0 ? b_grad : *b_gradient + b_grad;
+    };
+
+    out->m_forward = forward;
+    out->m_backward = backward;
+
+    return *out;
+}
+
+node& node::relu()
+{
+    node* out = create_node();
+    out->add_child(this);
+
+    tensor* a_data = m_data;
+    tensor* a_gradient = m_gradient;
+
+    tensor* out_data = out->m_data;
+    tensor* out_gradient = out->m_gradient;
+
+    std::function<void()> forward = [&, out_data, a_data](){ 
+        *out_data = op::max(*a_data, 0.0f);
+    };
+
+    std::function<void()> backward = [&,out_gradient, a_gradient, a_data](){
+        auto a_grad = (*a_data > 0.0f);
+        a_grad = a_grad * *out_gradient;
+        *a_gradient = a_gradient->size() == 0 ? a_grad : *a_gradient + a_grad;
     };
 
     out->m_forward = forward;

@@ -42,7 +42,6 @@ void graph::forwards()
     for(auto& node : m_exec_order)
     {
         node->forward();
-        node->data()->print();
     }
 
     std::cout << "answer: ";
@@ -52,8 +51,6 @@ void graph::forwards()
 void graph::backwards()
 {
     *m_output_node->gradient() = tensor({1});
-
-    m_output_node->gradient()->print();
 
     std::reverse(m_exec_order.begin(), m_exec_order.end());
     for(auto& node : m_exec_order)

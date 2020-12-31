@@ -21,8 +21,15 @@ class tensor
         size_t size();
         void print();
 
+        //we need to change this to shape at some point
+        size_t columns();
+        size_t rows();
+
         tensor& operator=(const tensor& rhs);
         tensor operator+(tensor& rhs);
+        tensor operator*(tensor& rhs);
+        tensor operator>(double val);
+        tensor operator<(double val);
 
     private:
 
@@ -100,6 +107,8 @@ tensor::tensor(std::initializer_list<std::initializer_list<double>> il)
 
 double* tensor::data(){return m_data;}
 size_t tensor::size(){return m_size;}  
+size_t tensor::rows(){return m_rows;}  
+size_t tensor::columns(){return m_columns;}  
 
 void tensor::print()
 {
@@ -115,7 +124,6 @@ void tensor::print()
         std::cout << std::endl;
     }
 }
-
 
 //operators
 tensor& tensor::operator=(const tensor& rhs)
@@ -135,10 +143,8 @@ tensor& tensor::operator=(const tensor& rhs)
 
 tensor tensor::operator+(tensor& rhs)
 {
-
     if(m_size != rhs.m_size)
     {
-        std::cout << m_size << " " << rhs.m_size << std::endl;
         throw std::runtime_error("tensor shapes not the same");
     }
 
@@ -146,11 +152,49 @@ tensor tensor::operator+(tensor& rhs)
     double* out_data = out.data();
     double* rhs_data = rhs.data();
 
-
     for(size_t i=0; i < m_size; i++)
     {
         out_data[i] = this->m_data[i] + rhs_data[i];
     }
+    return out;
+}
 
+tensor tensor::operator*(tensor& rhs)
+{
+    if(m_size != rhs.m_size)
+    {
+        throw std::runtime_error("tensor shapes not the same");
+    }
+
+    tensor out(m_rows, m_columns);
+    double* out_data = out.data();
+    double* rhs_data = rhs.data();
+
+    for(size_t i=0; i < m_size; i++)
+    {
+        out_data[i] = this->m_data[i] * rhs_data[i];
+    }
+    return out;
+}
+
+tensor tensor::operator>(double val)
+{
+    tensor out(m_rows, m_columns);
+    double* out_data = out.data();
+    for(size_t i=0; i < m_size; i++)
+    {
+        out_data[i] = this->m_data[i] > val;
+    }
+    return out;
+}
+
+tensor tensor::operator<(double val)
+{
+    tensor out(m_rows, m_columns);
+    double* out_data = out.data();
+    for(size_t i=0; i < m_size; i++)
+    {
+        out_data[i] = this->m_data[i] < val;
+    }
     return out;
 }
