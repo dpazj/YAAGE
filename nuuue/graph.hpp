@@ -59,9 +59,7 @@ void graph::backwards()
     for(auto& node : m_exec_order)
     {
         node->backward();
-        //node->data()->print();
     }
-
     std::cout << "dy/dx answer: ";
     m_input_node->gradient()->print();  
 }
@@ -74,7 +72,6 @@ void graph::populate_exec_order(node* node)
         m_visited.insert(node);
         for(const auto& child : node->children())
         {
-            //child->data()->print();
             populate_exec_order(child);
         }
         m_exec_order.push_back(node);

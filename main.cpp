@@ -46,7 +46,8 @@ void new_test()
     tensor input = {4.0};
     
     node x(input);
-    node y = x + x + x + x + x;
+    node y = x + x + x + x;
+
     graph g(x,y);
     // std::cout << "h" << std::endl;
     g.forwards();

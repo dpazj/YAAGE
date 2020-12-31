@@ -9,6 +9,7 @@ class node
 {
     public:
         node();
+        node(const node& x);
         node(tensor* x);
         node(tensor& x) : node(&x){};
         ~node();
@@ -24,10 +25,9 @@ class node
         node& operator+(node& rhs);
 
     private:
-
         void add_child(node *);
 
-        tensor* m_data; //shared ptr?
+        tensor* m_data;
         tensor* m_gradient;
 
         bool m_owns_data = true;
@@ -38,16 +38,20 @@ class node
 
         std::vector<node*> m_children;
         std::vector<node*> m_node_references;
-
         node* create_node();
-
 };
+
 
 
 node::node()
 {
     m_data = new tensor();
     m_gradient = new tensor();
+}
+
+node::node(const node& x)
+{
+    *this = x;
 }
 
 node::node(tensor* x)
@@ -59,14 +63,20 @@ node::node(tensor* x)
 
 node::~node()
 {
-
-   // std::cout << "still called - this causes the seg fault" << std::endl;
-    if(m_owns_data == true && m_data != nullptr)
+    if(m_owns_data && m_data != nullptr)
     {
-        //delete m_data;
+        delete m_data;
     }
-    //do something with gradient
-    //do something with node references
+
+    if(m_owns_gradient && m_gradient != nullptr)
+    {
+       delete m_gradient;
+    }
+
+    for(const auto& x : m_node_references)
+    {
+        delete x;
+    }
 }
 
 void node::forward(){m_forward();}
@@ -78,7 +88,6 @@ std::vector<node*> node::children(){return m_children;}
 
 void node::add_child(node * x){m_children.push_back(x);}
 
-
 node* node::create_node()
 {
     node* out = new node();
@@ -88,6 +97,15 @@ node* node::create_node()
 
 node& node::operator=(const node& rhs)
 {
+    
+    m_data = rhs.m_data;
+    m_gradient = rhs.m_gradient;
+    m_owns_data = false;
+    m_owns_gradient = false;
+    m_children = rhs.m_children;
+    m_backward = rhs.m_backward;
+    m_forward = rhs.m_forward;
+
     return *this;
 }
 
@@ -105,7 +123,7 @@ node& node::operator+(node& rhs)
     tensor* out_data = out->m_data;
     tensor* out_gradient = out->m_gradient;
 
-    std::function<void()> forward = [out_data, a_data, b_data](){
+    std::function<void()> forward = [out_data, a_data, b_data](){ 
         *out_data = *a_data + *b_data;
     };
 

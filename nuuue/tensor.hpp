@@ -15,6 +15,7 @@ class tensor
         tensor(size_t m, size_t n);
         tensor(std::initializer_list<double> il);
         tensor(std::initializer_list<std::initializer_list<double>> il);
+        ~tensor();
 
         double* data();
         size_t size();
@@ -25,12 +26,19 @@ class tensor
 
     private:
 
-        double* m_data;
+        double* m_data = nullptr;
         size_t m_size;
         size_t m_rows;
         size_t m_columns;
 };
 
+tensor::~tensor()
+{
+    if(m_data != nullptr)
+    {
+        delete[] m_data;
+    }
+}
 
 tensor::tensor()
 {
@@ -56,7 +64,6 @@ tensor::tensor(std::initializer_list<double> il)
     m_rows = 1;
     m_columns = il.size();
     m_size = m_rows * m_columns;
-    
     m_data = new double[m_size];
 
     size_t i = 0;
@@ -69,8 +76,6 @@ tensor::tensor(std::initializer_list<double> il)
 
 tensor::tensor(std::initializer_list<std::initializer_list<double>> il)
 {
-    
-
     m_rows = il.size();
     m_columns = il.begin()->size();
     m_size = m_rows * m_columns;
@@ -94,7 +99,7 @@ tensor::tensor(std::initializer_list<std::initializer_list<double>> il)
 }
 
 double* tensor::data(){return m_data;}
-size_t tensor::size(){return m_size;}
+size_t tensor::size(){return m_size;}  
 
 void tensor::print()
 {
