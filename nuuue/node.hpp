@@ -23,13 +23,13 @@ class node
         std::vector<node*> children();
     
         //operators
-        node& operator=(const node& rhs);
-        node& operator+(node& rhs);
-        node& operator-(node& rhs);
-        node& operator*(node& rhs);
+        node& operator=(const node& other);
+        node& operator+(node& other);
+        node& operator-(node& other);
+        node& operator*(node& other);
 
         node& relu();
-        node& dot(node& rhs);
+        node& dot(node& other);
         node& pow(double exponent);
 
     private:
@@ -103,42 +103,38 @@ node* node::create_node()
     return out;
 }
 
-node& node::operator=(const node& rhs)
+
+
+
+//------------OPERATORS----------------
+
+node& node::operator=(const node& other)
 {
-    
-    m_data = rhs.m_data;
-    m_gradient = rhs.m_gradient;
+    m_data = other.m_data;
+    m_gradient = other.m_gradient;
     m_owns_data = false;
     m_owns_gradient = false;
-    m_children = rhs.m_children;
-    m_backward = rhs.m_backward;
-    m_forward = rhs.m_forward;
-
+    m_children = other.m_children;
+    m_backward = other.m_backward;
+    m_forward = other.m_forward;
     return *this;
 }
 
 
-node& node::operator+(node& rhs)
+node& node::operator+(node& other)
 {
     node* out = create_node();
 
     out->add_child(this);
-    out->add_child(&rhs);
+    out->add_child(&other);
 
-    tensor* a_data = m_data;
-    tensor* a_gradient = m_gradient;
-    tensor* b_data = rhs.m_data;
-    tensor* b_gradient = rhs.m_gradient;
-    tensor* out_data = out->m_data;
-    tensor* out_gradient = out->m_gradient;
-
-    std::function<void()> forward = [out_data, a_data, b_data](){ 
-        *out_data = *a_data + *b_data;
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = *m_data + *other.m_data;
     };
 
-    std::function<void()> backward = [out_gradient, a_gradient, b_gradient](){
-        *a_gradient = a_gradient->size() == 0 ? *out_gradient : *a_gradient + *out_gradient;
-        *b_gradient = b_gradient->size() == 0 ? *out_gradient : *b_gradient + *out_gradient;
+    std::function<void()> backward = [&, out](){
+        *m_gradient = m_gradient->size() == 0 ? *out->m_gradient : *m_gradient + *out->m_gradient;
+        *other.m_gradient = other.m_gradient->size() == 0 ? *out->m_gradient : *other.m_gradient + *out->m_gradient;
     };
 
     out->m_forward = forward;
@@ -147,27 +143,19 @@ node& node::operator+(node& rhs)
     return *out;
 }
 
-node& node::operator-(node& rhs)
+node& node::operator-(node& other)
 {
     node* out = create_node();
-
     out->add_child(this);
-    out->add_child(&rhs);
+    out->add_child(&other);
 
-    tensor* a_data = m_data;
-    tensor* a_gradient = m_gradient;
-    tensor* b_data = rhs.m_data;
-    tensor* b_gradient = rhs.m_gradient;
-    tensor* out_data = out->m_data;
-    tensor* out_gradient = out->m_gradient;
-
-    std::function<void()> forward = [out_data, a_data, b_data](){ 
-        *out_data = *a_data - *b_data;
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = *m_data - *other.m_data;
     };
 
-    std::function<void()> backward = [out_gradient, a_gradient, b_gradient](){
-        *a_gradient = a_gradient->size() == 0 ? *out_gradient : *a_gradient + *out_gradient;
-        *b_gradient = b_gradient->size() == 0 ? -*out_gradient : *b_gradient - *out_gradient;
+    std::function<void()> backward = [&, out](){
+        *m_gradient = m_gradient->size() == 0 ? *out->m_gradient : *m_gradient + *out->m_gradient;
+        *other.m_gradient = other.m_gradient->size() == 0 ? -*out->m_gradient : *other.m_gradient - *out->m_gradient;
     };
 
     out->m_forward = forward;
@@ -176,30 +164,22 @@ node& node::operator-(node& rhs)
     return *out;
 }
 
-node& node::operator*(node& rhs)
+node& node::operator*(node& other)
 {
     node* out = create_node();
-
     out->add_child(this);
-    out->add_child(&rhs);
+    out->add_child(&other);
 
-    tensor* a_data = m_data;
-    tensor* a_gradient = m_gradient;
-    tensor* b_data = rhs.m_data;
-    tensor* b_gradient = rhs.m_gradient;
-    tensor* out_data = out->m_data;
-    tensor* out_gradient = out->m_gradient;
-
-    std::function<void()> forward = [out_data, a_data, b_data](){ 
-        *out_data = *a_data * *b_data;
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = *m_data * *other.m_data;
     };
 
-    std::function<void()> backward = [out_gradient, a_gradient, b_gradient, b_data, a_data](){
-        auto a_grad = *out_gradient * *b_data;
-        auto b_grad = *out_gradient * *a_data;
+    std::function<void()> backward = [&, out](){
+        auto a_derivative = *out->m_gradient * *other.m_data;
+        auto b_derivative = *out->m_gradient * *m_data;
 
-        *a_gradient = a_gradient->size() == 0 ? a_grad : *a_gradient + a_grad;
-        *b_gradient = b_gradient->size() == 0 ? b_grad : *b_gradient + b_grad;
+        *m_gradient = m_gradient->size() == 0 ? a_derivative : *m_gradient + a_derivative;
+        *other.m_gradient = other.m_gradient->size() == 0 ? b_derivative : *other.m_gradient + b_derivative;
     };
 
     out->m_forward = forward;
@@ -213,19 +193,13 @@ node& node::relu()
     node* out = create_node();
     out->add_child(this);
 
-    tensor* a_data = m_data;
-    tensor* a_gradient = m_gradient;
-
-    tensor* out_data = out->m_data;
-    tensor* out_gradient = out->m_gradient;
-
-    std::function<void()> forward = [out_data, a_data](){ 
-        *out_data = op::max(*a_data, 0.0f);
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = op::max(*m_data, 0.0f);
     };
 
-    std::function<void()> backward = [out_gradient, a_gradient, a_data](){
-        auto a_grad = *out_gradient * (*a_data > 0.0f);
-        *a_gradient = a_gradient->size() == 0 ? a_grad : *a_gradient + a_grad;
+    std::function<void()> backward = [&, out](){
+        auto a_grad = *out->m_gradient * (*m_data > 0.0f);
+        *m_gradient = m_gradient->size() == 0 ? a_grad : *m_gradient + a_grad;
     };
     out->m_forward = forward;
     out->m_backward = backward;
@@ -233,30 +207,23 @@ node& node::relu()
     return *out;
 }
 
-node& node::dot(node& rhs)
+node& node::dot(node& other)
 {
     node* out = create_node();
 
     out->add_child(this);
-    out->add_child(&rhs);
+    out->add_child(&other);
 
-    tensor* a_data = m_data;
-    tensor* a_gradient = m_gradient;
-    tensor* b_data = rhs.m_data;
-    tensor* b_gradient = rhs.m_gradient;
-    tensor* out_data = out->m_data;
-    tensor* out_gradient = out->m_gradient;
-
-    std::function<void()> forward = [out_data, a_data, b_data](){ 
-        *out_data = op::dot(*a_data,*b_data);
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = op::dot(*m_data,*other.m_data);
     };
 
-    std::function<void()> backward = [out_gradient, a_gradient, b_gradient, b_data, a_data](){
-        auto a= op::dot(*out_gradient, op::transpose(*b_data));
-        auto b= op::dot(op::transpose(*a_data), *out_gradient);
+    std::function<void()> backward = [&, out](){
+        auto a = op::dot(*out->m_gradient, op::transpose(*other.m_data));
+        auto b = op::dot(op::transpose(*m_data), *out->m_gradient);
 
-        *a_gradient = a_gradient->size() == 0 ? a: *a_gradient + a;
-        *b_gradient = b_gradient->size() == 0 ? b : *b_gradient + b;
+        *m_gradient = m_gradient->size() == 0 ? a: *m_gradient + a;
+        *other.m_gradient = other.m_gradient->size() == 0 ? b : *other.m_gradient + b;
     };
 
     out->m_forward = forward;
@@ -270,18 +237,13 @@ node& node::pow(double exponent)
     node* out = create_node();
     out->add_child(this);
 
-    tensor* a_data = m_data;
-    tensor* a_gradient = m_gradient;
-    tensor* out_data = out->m_data;
-    tensor* out_gradient = out->m_gradient;
-
-    std::function<void()> forward = [out_data, a_data, exponent](){ 
-        *out_data = op::pow(*a_data, exponent);
+    std::function<void()> forward = [&, out, exponent](){ 
+        *out->m_data = op::pow(*m_data, exponent);
     };
 
-    std::function<void()> backward = [out_gradient, a_gradient, a_data, exponent](){
-        auto der = *out_gradient * op::pow(*a_data, exponent - 1.0f) * exponent;
-        *a_gradient = a_gradient->size() == 0 ? der : *a_gradient + der;
+    std::function<void()> backward = [&, out, exponent](){
+        auto der = *out->m_gradient * op::pow(*m_data, exponent - 1.0f) * exponent;
+        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
 
     out->m_forward = forward;
