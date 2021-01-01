@@ -43,9 +43,6 @@ void graph::forwards()
     {
         node->forward();
     }
-
-    std::cout << "answer: ";
-    m_output_node->data()->print();  
 }
 
 void graph::backwards()
@@ -57,8 +54,6 @@ void graph::backwards()
     {
         node->backward();
     }
-    std::cout << "dy/dx answer: ";
-    m_input_node->gradient()->print();  
 }
 
 

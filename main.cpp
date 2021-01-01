@@ -55,9 +55,31 @@ void sanity_test()
     node y = h + q + q * x; 
 
     graph g(x,y);
-
     g.forwards();
     g.backwards();
+
+    std::cout << "y should be -20, y = ";   y.data()->print();
+    std::cout << "dy/dx should be 46, dy/dx = "; x.gradient()->print();
+}
+
+void test1()
+{
+    tensor input = {-4.0};
+    tensor input1 = {34.0};
+
+    node x(input);
+    node x1(input1);
+
+    auto z = x1 - x;
+    auto c = z.pow(2);
+    auto y = c - x1;
+
+    graph g(x,y);
+    g.forwards();
+    g.backwards();
+
+    std::cout << "y should be 1410, y = ";   y.data()->print();
+    std::cout << "dy/dx should be -76, dy/dx = "; x.gradient()->print();
 
 
 }
@@ -66,8 +88,8 @@ void sanity_test()
 int main()
 {
   
-    //SanityTest();
     sanity_test();
+    test1();
     
     return 0;
 
