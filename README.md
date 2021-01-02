@@ -1,5 +1,5 @@
 # cozygrad
-A cozy little header-only autograd engine written from scratch in c++. Cozygrad evaluates directed acyclic graphs and computes their gradients. Graphs are constructed with a simple and easy to use API. 
+A cozy header-only autograd engine written from scratch in c++. Cozygrad evaluates directed acyclic graphs and computes their gradients. Graphs are constructed with a simple and easy to use API. 
 
 # TODO
 1. Implement more OPS: Sigmoid, LogSoftmax
