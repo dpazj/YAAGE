@@ -7,11 +7,82 @@
 
 namespace op{
 
+    tensor of_value(size_t rows, size_t columns, double init_val);
+    tensor zeros(size_t rows, size_t columns);
+    tensor ones(size_t rows, size_t columns);
+
+    tensor sum(const tensor& a);
+    tensor exp(const tensor& a);
+    tensor log(const tensor& a);
     tensor max(const tensor& a, double y);
     tensor pow(const tensor& a, double e);
     tensor dot(const tensor& a, const tensor& b);
     tensor transpose(const tensor& a);
 
+    tensor of_value(size_t rows, size_t columns, double init_val)
+    {
+        tensor out(rows,columns);
+        double* out_data = out.data();
+        size_t size = out.size();
+        for(size_t i=0; i< size; i++)
+        {
+            out_data[i] = init_val;
+        }
+        return out;
+    }
+
+    tensor zeros(size_t rows, size_t columns){return of_value(rows, columns, 0.0f);}
+    tensor ones(size_t rows, size_t columns){return of_value(rows, columns, 1.0f);}
+
+    //for now we will just sum over both axis
+    //TODO sum over chosen axis;
+    tensor sum(const tensor& a) 
+    {
+        tensor c(1,1);
+        double* a_data = a.data();
+        double* c_data = c.data();
+        double acc = 0.0f;
+        for(size_t i=0; i < a.rows(); i++)
+        {
+            size_t offset = a.columns() * i;
+            for(size_t j=0; j < a.columns(); j++)
+            {
+                acc += a_data[offset + j];
+            }
+        }
+        c_data[0] = acc;
+        return c;
+    }
+
+    tensor exp(const tensor& a)
+    {
+        tensor c(a.rows(), a.columns());
+        double* a_data = a.data();
+        double* c_data = c.data();
+        for(size_t i=0; i < a.rows(); i++)
+        {
+            for(size_t j=0; j < a.columns(); j++)
+            {
+                c_data[i] = std::exp(a_data[i]);
+            }
+        }
+        return c;
+    }
+
+    tensor log(const tensor& a)
+    {
+        tensor c(a.rows(), a.columns());
+        double* a_data = a.data();
+        double* c_data = c.data();
+        for(size_t i=0; i < a.rows(); i++)
+        {
+            for(size_t j=0; j < a.columns(); j++)
+            {
+                c_data[i] = std::log(a_data[i]);
+            }
+        }
+        return c;
+    }
 
     tensor max(const tensor& a, double y)
     {

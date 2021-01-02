@@ -1,5 +1,3 @@
-
-
 CXX = g++
 
 CFLAGS = -Wall -Werror
@@ -9,10 +7,6 @@ LDFLAGS =
 
 
 OBJ=main.o \
-	# src/matrix.o \
-	# src/matrix_ops.o \
-	# src/node.o \
-	# src/graph.o \
 	
 
 %.o: %.cpp $(DEPS)

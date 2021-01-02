@@ -26,11 +26,18 @@ class tensor
         size_t rows() const;
 
         tensor& operator=(const tensor& rhs);
+
         tensor operator+(const tensor& rhs);
+
         tensor operator-(const tensor& rhs);
         tensor operator-();
+
         tensor operator*(const tensor& rhs);
         tensor operator*(const double rhs);
+
+        tensor operator/(const tensor& rhs);
+        tensor operator/(const double rhs);
+
         tensor operator>(double val);
         tensor operator<(double val);
 
@@ -115,8 +122,6 @@ size_t tensor::columns() const {return m_columns;}
 
 void tensor::print()
 {
-
-
     for(size_t i=0;i<m_rows;i++)
     {
         size_t offset = i * m_columns;
@@ -144,6 +149,7 @@ tensor& tensor::operator=(const tensor& rhs)
     return *this;
 }
 
+//adding
 tensor tensor::operator+(const tensor& rhs)
 {
     if(m_size != rhs.m_size)
@@ -162,6 +168,24 @@ tensor tensor::operator+(const tensor& rhs)
     return out;
 }
 
+tensor operator+(double lhs,const tensor& rhs)
+{
+    tensor out(rhs.rows(), rhs.columns());
+    double* out_data = out.data();
+    double* rhs_data = rhs.data();
+    for(size_t i=0; i < rhs.size(); i++)
+    {
+        out_data[i] = lhs + rhs_data[i];
+    }
+    return out;
+}
+
+tensor operator+(const tensor& lhs, double rhs)
+{
+    return rhs + lhs;
+}
+
+//subbing
 tensor tensor::operator-(const tensor& rhs)
 {
     if(m_size != rhs.m_size)
@@ -180,12 +204,34 @@ tensor tensor::operator-(const tensor& rhs)
     return out;
 }
 
+tensor operator-(double lhs, const tensor& rhs)
+{
+    tensor out(rhs.rows(), rhs.columns());
+    double* out_data = out.data();
+    double* rhs_data = rhs.data();
+    for(size_t i=0; i < rhs.size(); i++)
+    {
+        out_data[i] = lhs - rhs_data[i];
+    }
+    return out;
+}
+
+tensor operator-(const tensor& lhs, double rhs)
+{
+    tensor out(lhs.rows(), lhs.columns());
+    double* out_data = out.data();
+    double* rhs_data = lhs.data();
+    for(size_t i=0; i < lhs.size(); i++)
+    {
+        out_data[i] = rhs_data[i] - rhs;
+    }
+    return out;
+}
+
 tensor tensor::operator-()
 {
-
     tensor out(m_rows, m_columns);
     double* out_data = out.data();
-
     for(size_t i=0; i < m_size; i++)
     {
         out_data[i] = -this->m_data[i];
@@ -193,6 +239,7 @@ tensor tensor::operator-()
     return out;
 }
 
+//multiplying
 tensor tensor::operator*(const tensor& rhs)
 {
     if(m_size != rhs.m_size)
@@ -223,6 +270,56 @@ tensor tensor::operator*(double rhs)
     return out;
 }
 
+tensor operator*(double lhs, tensor& rhs)
+{
+    return rhs * lhs;
+}
+//dividing
+tensor tensor::operator/(const tensor& rhs)
+{
+    if(m_size != rhs.m_size)
+    {
+        std::cout << m_size << " " << rhs.m_size << std::endl;
+        throw std::runtime_error("tensor shapes not the same");
+    }
+
+    tensor out(m_rows, m_columns);
+    double* out_data = out.data();
+    double* rhs_data = rhs.data();
+
+    for(size_t i=0; i < m_size; i++)
+    {
+        out_data[i] = this->m_data[i] / rhs_data[i];
+    }
+    return out;
+}
+
+tensor tensor::operator/(double rhs)
+{
+    tensor out(m_rows, m_columns);
+    double* out_data = out.data();
+
+    for(size_t i=0; i < m_size; i++)
+    {
+        out_data[i] = this->m_data[i] / rhs;
+    }
+    return out;
+}
+
+tensor operator/(double lhs, tensor& rhs)
+{
+    tensor out(rhs.rows(), rhs.columns());
+    double* out_data = out.data();
+    double* rhs_data = rhs.data();
+
+    for(size_t i=0; i < rhs.size(); i++)
+    {
+        out_data[i] = lhs / rhs_data[i];
+    }
+    return out;
+}
+
+//greater than
 tensor tensor::operator>(double val)
 {
     tensor out(m_rows, m_columns);
@@ -233,7 +330,7 @@ tensor tensor::operator>(double val)
     }
     return out;
 }
-
+//less than
 tensor tensor::operator<(double val)
 {
     tensor out(m_rows, m_columns);
@@ -244,3 +341,4 @@ tensor tensor::operator<(double val)
     }
     return out;
 }
+

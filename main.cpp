@@ -1,8 +1,3 @@
-// #include "src/matrix.h"
-// #include "src/matrix_ops.h"
-// #include "src/node.h"
-// #include "src/graph.h"
-
 #include <iostream>
 #include <iomanip>
 
@@ -49,15 +44,28 @@ void test1()
     std::cout << "y should be 1410, y = ";   y.data()->print();
     std::cout << "dy/dx should be -76, dy/dx = "; x.gradient()->print();
 
-
 }
 
+void test2()
+{
+    tensor input = {24.0f};
+    node x(input);
+    node y = (x * x.exp()).log() * x;
+    graph g(x,y);
+    g.forwards();
+    g.backwards();
+
+    y.data()->print();
+    x.gradient()->print();
+
+}
 
 int main()
 {
   
-    sanity_test();
-    test1();
+    // sanity_test();
+    // test1();
+    test2();
     
     return 0;
 

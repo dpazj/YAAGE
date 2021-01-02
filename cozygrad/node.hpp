@@ -31,6 +31,10 @@ class node
         node& relu();
         node& dot(node& other);
         node& pow(double exponent);
+        node& sum();
+        node& exp();
+        node& log();
+        node& sigmoid();
 
     private:
         void add_child(node *);
@@ -243,6 +247,69 @@ node& node::pow(double exponent)
 
     std::function<void()> backward = [&, out, exponent](){
         auto der = *out->m_gradient * op::pow(*m_data, exponent - 1.0f) * exponent;
+        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+    };
+
+    out->m_forward = forward;
+    out->m_backward = backward;
+
+    return *out;
+}
+
+//this will need to be changed in future to work with more dimensions
+node& node::sum()
+{
+    node* out = create_node();
+    out->add_child(this);
+
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = op::sum(*m_data);
+    };
+
+    std::function<void()> backward = [&, out](){
+        //this is the bit that will need changed : )
+        double x = out->m_gradient->data()[0];
+        auto der = op::of_value(m_data->rows(), m_data->columns(), x);
+        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+    };
+
+    out->m_forward = forward;
+    out->m_backward = backward;
+
+    return *out;
+}
+
+node& node::exp()
+{
+    node* out = create_node();
+    out->add_child(this);
+
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = op::exp(*m_data);
+    };
+
+    std::function<void()> backward = [&, out](){
+        auto der = *out->m_data * *out->m_gradient; //* *out->m_gradient;
+        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+    };
+
+    out->m_forward = forward;
+    out->m_backward = backward;
+
+    return *out;
+}
+
+node& node::log()
+{
+    node* out = create_node();
+    out->add_child(this);
+
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = op::log(*m_data);
+    };
+
+    std::function<void()> backward = [&, out](){
+        auto der = *out->m_gradient / *m_data;
         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
 
