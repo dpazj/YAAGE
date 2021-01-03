@@ -59,9 +59,14 @@ void graph::backwards()
 
 void graph::populate_exec_order(node* node)
 {
+    if(node == nullptr)
+    {
+        std::cout << "nullptr alert" << std::endl;
+    }
     if(m_visited.find(node) == m_visited.end()) //if child not in visited
     {
         m_visited.insert(node);
+
         for(const auto& child : node->children())
         {
             populate_exec_order(child);

@@ -7,6 +7,8 @@
 #include <iostream>
 #include <cstring>
 
+typedef unsigned long size_t;
+
 class tensor
 {
     public:
@@ -57,10 +59,7 @@ tensor::~tensor()
     }
 }
 
-tensor::tensor()
-{
-    //so we can create uninitialized tensors that can be given life later :)
-}
+tensor::tensor(){}
 
 tensor::tensor(const tensor& x)
 {
@@ -156,7 +155,6 @@ tensor tensor::operator+(const tensor& rhs)
     {
         throw std::runtime_error("tensor shapes not the same");
     }
-
     tensor out(m_rows, m_columns);
     double* out_data = out.data();
     double* rhs_data = rhs.data();
@@ -274,6 +272,7 @@ tensor operator*(double lhs, tensor& rhs)
 {
     return rhs * lhs;
 }
+
 //dividing
 tensor tensor::operator/(const tensor& rhs)
 {
@@ -306,7 +305,7 @@ tensor tensor::operator/(double rhs)
     return out;
 }
 
-tensor operator/(double lhs, tensor& rhs)
+tensor operator/(double lhs, const tensor& rhs)
 {
     tensor out(rhs.rows(), rhs.columns());
     double* out_data = out.data();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "session.hpp"
 #include "tensor.hpp"
 #include "tensor_ops.hpp"
 
@@ -11,7 +12,7 @@ class node
     public:
         node();
         node(const node& x);
-        node(tensor* x);
+        node(tensor* x, bool updatable = true);
         node(tensor& x) : node(&x){};
         ~node();
 
@@ -22,6 +23,8 @@ class node
         tensor* gradient();
         std::vector<node*> children();
     
+        bool updatable();
+
         //operators
         node& operator=(const node& other);
         node& operator+(node& other);
@@ -44,6 +47,7 @@ class node
 
         bool m_owns_data = true;
         bool m_owns_gradient = true;
+        bool m_data_updatable = false;
 
         std::function<void()> m_forward = [](){};
         std::function<void()> m_backward = [](){};
@@ -66,8 +70,9 @@ node::node(const node& x)
     *this = x;
 }
 
-node::node(tensor* x)
+node::node(tensor* x, bool updatable)
 {
+    m_data_updatable = updatable;
     m_owns_data = false;
     m_data = x;
     m_gradient = new tensor();
@@ -82,28 +87,31 @@ node::~node()
 
     if(m_owns_gradient && m_gradient != nullptr)
     {
-       delete m_gradient;
-    }
-
-    for(const auto& x : m_node_references)
-    {
-        delete x;
-    }
+        delete m_gradient;
+    }  
 }
 
 void node::forward(){m_forward();}
 void node::backward(){m_backward();}
 
+bool node::updatable(){return m_data_updatable;}
 tensor* node::data(){return m_data;}
 tensor* node::gradient(){return m_gradient;}
 std::vector<node*> node::children(){return m_children;}
 
-void node::add_child(node * x){m_children.push_back(x);}
+void node::add_child(node * x)
+{
+    //copy of refers to itself if it is not a copy
+    m_children.push_back(x);
+}
 
 node* node::create_node()
 {
     node* out = new node();
-    m_node_references.push_back(out);
+
+    Session& session = Session::get_session();
+    session.add_node(out);
+
     return out;
 }
 
@@ -121,6 +129,7 @@ node& node::operator=(const node& other)
     m_children = other.m_children;
     m_backward = other.m_backward;
     m_forward = other.m_forward;
+
     return *this;
 }
 
@@ -289,7 +298,7 @@ node& node::exp()
     };
 
     std::function<void()> backward = [&, out](){
-        auto der = *out->m_data * *out->m_gradient; //* *out->m_gradient;
+        auto der = *out->m_data * *out->m_gradient;
         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
 
@@ -311,6 +320,26 @@ node& node::log()
     std::function<void()> backward = [&, out](){
         auto der = *out->m_gradient / *m_data;
         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+    };
+
+    out->m_forward = forward;
+    out->m_backward = backward;
+
+    return *out;
+}
+
+node& node::sigmoid()
+{
+    node* out = create_node();
+    out->add_child(this);
+
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = 1 / (1 + op::exp(-*m_data));
+    };
+
+    std::function<void()> backward = [&, out](){
+       auto der = *out->m_data * (1 - *out->m_data);
+       *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
 
     out->m_forward = forward;

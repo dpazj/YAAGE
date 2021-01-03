@@ -2,7 +2,7 @@
 #include <initializer_list>
 #include <vector>
 #include <exception>
-typedef unsigned long size_t;
+
 
 class tensor_shape
 {
