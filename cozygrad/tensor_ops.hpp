@@ -7,10 +7,6 @@
 
 namespace op{
 
-    tensor of_value(size_t rows, size_t columns, double init_val);
-    tensor zeros(size_t rows, size_t columns);
-    tensor ones(size_t rows, size_t columns);
-
     tensor sum(const tensor& a);
     tensor exp(const tensor& a);
     tensor log(const tensor& a);
@@ -18,21 +14,6 @@ namespace op{
     tensor pow(const tensor& a, double e);
     tensor dot(const tensor& a, const tensor& b);
     tensor transpose(const tensor& a);
-
-    tensor of_value(size_t rows, size_t columns, double init_val)
-    {
-        tensor out(rows,columns);
-        double* out_data = out.data();
-        size_t size = out.size();
-        for(size_t i=0; i< size; i++)
-        {
-            out_data[i] = init_val;
-        }
-        return out;
-    }
-
-    tensor zeros(size_t rows, size_t columns){return of_value(rows, columns, 0.0f);}
-    tensor ones(size_t rows, size_t columns){return of_value(rows, columns, 1.0f);}
 
     //for now we will just sum over both axis
     //TODO sum over chosen axis;
@@ -116,7 +97,7 @@ namespace op{
 
         if(a.columns() != b.rows())
         {
-            throw std::runtime_error("dot: Matrix a rows != Matrix b columns!");
+            throw std::runtime_error("dot: Matrix a rows != Matrix b columns! got: " + std::to_string(a.columns()) + " and " + std::to_string(b.rows()));
         }
         tensor c(M,N);
         double* a_data = a.data();
@@ -143,19 +124,20 @@ namespace op{
 
     tensor transpose(const tensor& a)
     {
-        tensor a_t(a.rows(), a.columns());
+        tensor a_t(a.columns(), a.rows());
         double* a_t_data = a_t.data();
         double* a_data = a.data();
+
+        size_t rows = a.rows();
         size_t columms = a.columns();
 
-        for(size_t i=0; i<a_t.rows(); i++)
+        for(size_t i=0; i<rows; i++)
         {
             size_t a_offset = i * columms;
             for (size_t j = 0; j < columms; j++)
             {
-                a_t_data[j * columms +  i] = a_data[a_offset + j];
+               a_t_data[j * rows +  i] = a_data[a_offset + j];
             }
-        
         }
         return a_t;
     }

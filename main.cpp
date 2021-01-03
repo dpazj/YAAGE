@@ -13,15 +13,13 @@
 void sanity_test()
 {
     tensor input = {-4.0};
-    tensor input1 = {2.0};
     
     node x(input);
-    node two(input1);
 
-    node z = two * x + two + x;
-    node q = z.relu() + z * x;
-    node h = (z * z).relu();
-    node y = h + q + q * x; 
+    auto& z = 2 * x + 2 + x;
+    auto& q = z.relu() + z * x;
+    auto& h = (z * z).relu();
+    auto& y = h + q + q * x; 
 
     graph g(x,y);
     g.forwards();
@@ -31,26 +29,22 @@ void sanity_test()
     std::cout << "dy/dx should be 46, dy/dx = "; x.gradient()->print();
 }
 
-node& test1()
+void test1()
 {
     tensor* input = new tensor({-4.0});
-    tensor* input1 = new tensor({34.0});
+    
+    node x(input);
 
-    node* x = new node(input);
-    node* x1 = new node(input1);
-
-    auto& z = *x1 - *x;
+    auto& z = 34 - x;
     auto& c = z.pow(2);
-    auto& y = c - *x1;
+    auto& y = c - 34;
 
-    // graph g(*x,y);
-    // g.forwards();
-    // g.backwards();
+    graph g(x,y);
+    g.forwards();
+    g.backwards();
 
-    // std::cout << "y should be 1410, y = ";   y.data()->print();
-    // std::cout << "dy/dx should be -76, dy/dx = "; x->gradient()->print();
-    return y;
-
+    std::cout << "y should be 1410, y = ";   y.data()->print();
+    std::cout << "dy/dx should be -76, dy/dx = "; x.gradient()->print();
 }
 
 void test2()
@@ -66,29 +60,27 @@ void test2()
     x.gradient()->print();
 }
 
-class MoonNet : model
+class MoonNet : public model
 {
-    node create_model()
+    node& create_model()
     {
-        node input = create_input_node();
+        auto& input = create_input_node();
 
-        node w1 = create_model_param(2,16);
-        node w2 = create_model_param(16,16);
-        node w3 = create_model_param(16,1);
+        auto& w1 = create_model_param(2,16);
+        auto& w2 = create_model_param(16,16);
+        auto& w3 = create_model_param(16,1);
 
-        node b1 = create_model_param(1,16);
-        node b2 = create_model_param(1,16);
-        node b3 = create_model_param(1,1);
+        auto& b1 = create_model_param(1,16);
+        auto& b2 = create_model_param(1,16);
+        auto& b3 = create_model_param(1,1);
 
-        node l1 = (input.dot(w1) + b1).relu(); //;layer 1
-        node l2 = (l1.dot(w2) + b2).relu();
-        node l3 = (l2.dot(w3) + b3).sigmoid();
+        auto& l1 = (input.dot(w1) + b1).relu(); //;layer 1
+        auto& l2 = (l1.dot(w2) + b2).relu();
+        auto& l3 = (l2.dot(w3) + b3).sigmoid();
 
         return l3;
     }
-
-
-        
+  
 };
 
 std::vector<std::string> split(const std::string &s, char delim) {
@@ -118,7 +110,9 @@ void do_moon()
         y.push_back(tmp1); 
     }
 
+    MoonNet model;
 
+    model.train(X,y);
 
     // process pair (a,b)
 }
@@ -127,18 +121,10 @@ void do_moon()
 
 int main()
 {
-    //do_moon();
-    // sanity_test();
-    auto& y = test1();
-    graph g(y,y);
-    g.forwards();
-    //g.backwards();
 
-    std::cout << "y should be 1410, y = ";   y.data()->print();
-    //std::cout << "dy/dx should be -76, dy/dx = "; x.gradient()->print();
-
-
-
+    // do_moon();
+    sanity_test();
+    test1();
     //test2();
 
     utils::clean_session();

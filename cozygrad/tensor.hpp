@@ -6,6 +6,7 @@
 #include <memory>
 #include <iostream>
 #include <cstring>
+#include <random>
 
 typedef unsigned long size_t;
 
@@ -19,6 +20,12 @@ class tensor
         tensor(std::initializer_list<std::initializer_list<double>> il);
         ~tensor();
 
+        void of_value(double val);
+        void zeros();
+        void ones();
+        void random(double min = -1, double max = 1, int seed = 1337);
+
+
         double* data() const;
         size_t size() const;
         void print();
@@ -27,6 +34,8 @@ class tensor
         size_t columns() const;
         size_t rows() const;
 
+
+        //operators
         tensor& operator=(const tensor& rhs);
 
         tensor operator+(const tensor& rhs);
@@ -46,9 +55,9 @@ class tensor
     private:
 
         double* m_data = nullptr;
-        size_t m_size;
-        size_t m_rows;
-        size_t m_columns;
+        size_t m_size = 0;
+        size_t m_rows = 0;
+        size_t m_columns = 0;
 };
 
 tensor::~tensor()
@@ -114,6 +123,27 @@ tensor::tensor(std::initializer_list<std::initializer_list<double>> il)
     }
 }
 
+void tensor::of_value(double val)
+{
+    for(size_t i=0; i< m_size; i++)
+    {
+        m_data[i] = val;
+    }
+}
+
+void tensor::zeros(){of_value(0.0f);}
+void tensor::ones(){of_value(1.0f);}
+
+void tensor::random(double min, double max, int seed)
+{
+    std::mt19937 gen(seed);
+    std::uniform_real_distribution<double> dis(min, max);
+    for(size_t i=0; i< m_size; i++)
+    {
+        m_data[i] = dis(gen);
+    }
+}
+
 double* tensor::data() const {return m_data;}
 size_t tensor::size() const {return m_size;}  
 size_t tensor::rows() const {return m_rows;}  
@@ -153,7 +183,7 @@ tensor tensor::operator+(const tensor& rhs)
 {
     if(m_size != rhs.m_size)
     {
-        throw std::runtime_error("tensor shapes not the same");
+        throw std::runtime_error("add: tensor shapes not the same " + std::to_string(m_size) + " " +  std::to_string(rhs.m_size));
     }
     tensor out(m_rows, m_columns);
     double* out_data = out.data();
@@ -228,13 +258,7 @@ tensor operator-(const tensor& lhs, double rhs)
 
 tensor tensor::operator-()
 {
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = -this->m_data[i];
-    }
-    return out;
+    return *this * -1;
 }
 
 //multiplying
