@@ -6,6 +6,8 @@
 #include <vector>
 #include <algorithm>
 
+namespace czy{
+
 class graph
 {
 
@@ -17,7 +19,7 @@ class graph
         void backwards();
         void zero_gradients();
 
-        std::vector<node*> get_nodes();
+        std::vector<node*> nodes();
 
     private:
         node* m_output_node;
@@ -29,7 +31,6 @@ class graph
         std::vector<node *> m_reverse_exec_order;
 };
 
-
 graph::graph(node * output)
 {
     m_output_node = output;
@@ -39,7 +40,7 @@ graph::graph(node * output)
     std::reverse(m_reverse_exec_order.begin(), m_reverse_exec_order.end());
 }
 
-std::vector<node*> graph::get_nodes(){return m_exec_order;};
+std::vector<node*> graph::nodes(){return m_exec_order;};
 
 void graph::forwards()
 {
@@ -80,3 +81,9 @@ void graph::populate_exec_order(node* node)
         m_exec_order.push_back(node);
     }
 } 
+
+}//namespace czy
+
+
+
+

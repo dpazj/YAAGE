@@ -9,7 +9,10 @@
 #include <cstring>
 #include <random>
 
+
 typedef unsigned long size_t;
+
+namespace czy{
 
 class tensor
 {
@@ -364,4 +367,9 @@ tensor tensor::operator<(double val)
     }
     return out;
 }
+
+}//namespace czy
+
+
+
 

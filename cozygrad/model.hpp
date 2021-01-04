@@ -6,15 +6,17 @@
 #include "graph.hpp"
 
 #include <vector>
+#include <functional>
 
+namespace czy{
+    
 class model
 {
     public: 
         ~model();
 
-        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim);
+        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, size_t epochs, std::function<node&(node&,node&)> loss_fn);
         //void evaluate();
-
         virtual node& create_model() = 0;
 
     protected:
@@ -26,8 +28,6 @@ class model
         std::vector<tensor*> m_model_parameters;
         node* m_input_node = nullptr;
 };
-
-
 
 model::~model()
 {
@@ -63,21 +63,16 @@ node& model::create_model_param(size_t m, size_t n)
     return *out;
 }
 
-void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim)
+void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, size_t epochs, std::function<node&(node&,node&)> loss_fn)
 {
-    //double learning_rate = 0.05;
-    size_t epoch = 25;
     auto& model = create_model();
-
-    //create loss function
-    
     node label;
 
-    auto& loss = ((1 + (-label*model)).relu()).sum();
+    auto& loss = loss_fn(label, model);
  
     graph g(loss);
 
-    for(size_t k=0; k < epoch; k++){
+    for(size_t k=0; k < epochs; k++){
         tensor av_loss = {0};
         for(size_t i=0; i < x_train.size();i++)
         {
@@ -86,26 +81,18 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, op
 
             g.forwards();
             g.backwards();
-
-            //sdg
-            // for(auto& x : g.get_unique_nodes())
-            // {
-            //     if(x->updatable())
-            //     {
-            //         tensor* data = x->data(); 
-            //         tensor* grad = x->gradient();
-            //         *data = *data - (learning_rate * *grad);
-            //     }
-            // }
-            optim.step(g.get_nodes());
-
-
-            av_loss = av_loss + *loss.data();
-            
+            optim.step(g.nodes());
             g.zero_gradients();
-        }
 
-        std::cout << "step " + std::to_string(k + 1) +" average loss: " << av_loss.data()[0] / x_train.size() << std::endl;
+            //stats
+            av_loss = av_loss + *loss.data();
+        }
+        std::cout << "epoch " + std::to_string(k + 1) +" average loss: " << av_loss.data()[0] / x_train.size() << std::endl;
     }
 
 }
+
+
+}//namespace czy
+
+

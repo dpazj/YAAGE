@@ -2,6 +2,8 @@
 
 #include "node.hpp"
 
+namespace czy{
+    
 class optimizer
 {   
     public:
@@ -11,7 +13,6 @@ class optimizer
     protected:
         double m_lr;
 };
-
 
 optimizer::optimizer(double lr)
 {
@@ -37,3 +38,6 @@ void SDG::step(std::vector<node*> graph_nodes)
         }
     }
 }
+
+}//namespace czy
+

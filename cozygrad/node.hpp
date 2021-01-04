@@ -7,7 +7,7 @@
 #include <functional>
 #include <vector>
 
-class Session;
+namespace czy{
 
 class node
 {
@@ -132,9 +132,6 @@ node* node::create_node()
 
     return out;
 }
-
-
-
 
 //------------OPERATORS----------------
 
@@ -413,3 +410,7 @@ node& node::sigmoid()
 
     return *out;
 }
+
+
+}//namespace czy
+

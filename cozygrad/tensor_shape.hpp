@@ -3,7 +3,8 @@
 #include <vector>
 #include <exception>
 
-
+namespace czy{
+    
 class tensor_shape
 {
     public:
@@ -81,3 +82,6 @@ bool tensor_shape::operator!=(tensor_shape& rhs)
     bool equal = *this == rhs;
     return !equal;
 }
+
+}//namespace czy
+

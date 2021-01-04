@@ -8,9 +8,7 @@
 
 #include "cozygrad/cozygrad.h"
 
-
-
-
+using namespace czy;
 
 void sanity_test()
 {
@@ -81,7 +79,6 @@ class MoonNet : public model
         
         return l3;
     }
-  
 };
 
 std::vector<std::string> split(const std::string &s, char delim) {
@@ -96,7 +93,6 @@ std::vector<std::string> split(const std::string &s, char delim) {
 
 void do_moon()
 {
-
     std::vector<tensor> X;
     std::vector<tensor> y;
 
@@ -114,28 +110,20 @@ void do_moon()
     double learning_rate = 0.05;
     SDG optim(learning_rate);
     MoonNet model;
-    model.train(X,y, optim);
+    model.train(X,y, optim, 25, hinge);
 
     // process pair (a,b)
 }
-
-
 
 int main()
 {
     //sanity_test();
     //test1();
     //test2();
-
-
     do_moon();
 
-    Session& session = Session::get_session();
-    for(node* x : session.get_session_nodes())
-    {
-        delete x;
-    }
-    
+    utils::clean_session();
+
     return 0;
 
 }

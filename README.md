@@ -3,6 +3,7 @@ A cozy header-only autograd engine written from scratch in c++. Cozygrad evaluat
 ## example
 ```c++
 #include "cozygrad/cozygrad.h"
+using namespace czy;
 
 int main()
 {
@@ -21,6 +22,9 @@ int main()
 
     y.data()->print(); // 62.7508
     x.gradient()->print(); // dy/dx -8.16071
+
+    //clean up
+    utils::clean_session();
 }
 ```
 ## pytorch equivalent
@@ -41,10 +45,11 @@ print(x.grad) # dy/dx -8.1607
 
 ```
 ## constructing a neural network
-Simpy extend the model class and implement the create_model function
+Simply extend the model class and implement the create_model function
 ```c++
 #include "cozygrad/cozygrad.h"
- 
+using namespace czy;
+
 class MyNet : public model
 {
     node& create_model()
@@ -75,6 +80,9 @@ int main()
     SDG sdg(learning_rate);
     MyNet model;
     model.train(X,y, sdg);
+
+    //clean up
+    utils::clean_session();
 }
 ```
 ## TODO
