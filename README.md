@@ -46,6 +46,8 @@ print(x.grad) # dy/dx -8.1607
 ## constructing a neural network
 Simpy extend the model class and implement the create_model function
 ```c++
+#include "cozygrad/cozygrad.h"
+ 
 class MyNet : public model
 {
     node& create_model()
