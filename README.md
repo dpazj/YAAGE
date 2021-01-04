@@ -1,7 +1,6 @@
-A cozy header-only autograd engine written from scratch in c++. Cozygrad evaluates directed acyclic graphs and computes their gradients. Graphs are constructed with a simple and easy to use (pytorch ish?) API. 
-
+# cozygrad
+A cozy header-only autograd engine written from scratch in c++. Cozygrad evaluates directed acyclic graphs and computes their gradients. Graphs are constructed with a simple and easy to use (pytorch like?) API. 
 ## example
-
 ```c++
 #include "cozygrad/cozygrad.h"
 
@@ -24,8 +23,7 @@ int main()
     x.gradient()->print(); // dy/dx -8.16071
 }
 ```
-
-## pytorch
+## pytorch equivalent
 ```python
 import torch
 
@@ -42,10 +40,11 @@ print(y.data) # 62.7508
 print(x.grad) # dy/dx -8.1607
 
 ```
-
 ## constructing a neural network
 Simpy extend the model class and implement the create_model function
 ```c++
+#include "cozygrad/cozygrad.h"
+ 
 class MyNet : public model
 {
     node& create_model()
@@ -77,10 +76,7 @@ int main()
     MyNet model;
     model.train(X,y, sdg);
 }
-
-
 ```
-
 ## TODO
 * Get simple MNIST working & training.
 * Make tensor class better - n dimensions, broadcasting etc
