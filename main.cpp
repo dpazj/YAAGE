@@ -6,11 +6,8 @@
 #include <string>
 #include <stdlib.h>
 
-#include "cozygrad/node.hpp"
-#include "cozygrad/graph.hpp"
-#include "cozygrad/tensor.hpp"
-#include "cozygrad/utils.hpp"
-#include "cozygrad/model.hpp"
+#include "cozygrad/cozygrad.h"
+
 
 
 
@@ -18,7 +15,6 @@
 void sanity_test()
 {
     tensor input = {-4.0};
-    
     node x(input);
 
     auto& z = 2 * x + 2 + x;
@@ -26,7 +22,7 @@ void sanity_test()
     auto& h = (z * z).relu();
     auto& y = h + q + q * x; 
 
-    graph g(x,y);
+    graph g(y);
     g.forwards();
     g.backwards();
 
@@ -44,7 +40,7 @@ void test1()
     auto& c = z.pow(2);
     auto& y = c - 34;
 
-    graph g(x,y);
+    graph g(y);
     g.forwards();
     g.backwards();
 
@@ -57,7 +53,7 @@ void test2()
     tensor input = {24.0f};
     node x(input);
     node y = x.sigmoid();
-    graph g(x,y);
+    graph g(y);
     g.forwards();
     g.backwards();
 
@@ -123,6 +119,26 @@ void do_moon()
 }
 
 
+#include "cozygrad/cozygrad.h"
+
+void example1()
+{
+    tensor t = {-8.0};
+
+    node x(t);
+    auto& a = 42 - x;
+    auto& b = a.pow(2) + a;
+    auto& c = b.log() * x;
+    auto& y = -c;
+
+    //construct a graph
+    graph g(y);
+    g.forwards();
+    g.backwards();
+
+    y.data()->print(); // 62.7508
+    x.gradient()->print(); // dy/dx -8.16071
+}
 
 
 
@@ -131,6 +147,7 @@ int main()
     //sanity_test();
     //test1();
     //test2();
+    example1();
 
     do_moon();
 

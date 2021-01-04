@@ -79,7 +79,7 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train)
 
     auto& loss = ((1 + (-label*model)).relu()).sum();
  
-    graph g(*m_input_node,loss);
+    graph g(loss);
 
     
 

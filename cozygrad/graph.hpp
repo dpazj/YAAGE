@@ -10,8 +10,8 @@ class graph
 {
 
     public:
-        graph(node& input, node& output) : graph(&input, &output){};
-        graph(node * input, node * output);
+        graph(node& output) : graph(&output){};
+        graph(node * output);
 
         void forwards();
         void backwards();
@@ -20,7 +20,6 @@ class graph
         std::vector<node*> get_unique_nodes(){return m_exec_order;};
 
     private:
-        node* m_input_node;
         node* m_output_node;
 
         void populate_exec_order(node* node);
@@ -31,9 +30,8 @@ class graph
 };
 
 
-graph::graph(node * input, node * output)
+graph::graph(node * output)
 {
-    m_input_node = input;
     m_output_node = output;
 
     populate_exec_order(m_output_node); 
