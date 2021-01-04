@@ -3,6 +3,7 @@
 #include <vector>
 
 namespace czy{
+namespace autograd{
 
 //class manages allocated memory and in future gpu stuff 
 class node;
@@ -35,6 +36,7 @@ void Session::add_node(node* x)
     m_session_nodes.push_back(x);       
 }
 
+}//namespace autograd
 }//namespace czy
 
 

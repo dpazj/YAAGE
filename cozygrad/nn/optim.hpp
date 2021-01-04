@@ -1,14 +1,16 @@
 #pragma once
 
-#include "node.hpp"
+#include "../autograd/node.hpp"
+
 
 namespace czy{
-    
+namespace nn{
+
 class optimizer
 {   
     public:
         optimizer(double lr);
-        virtual void step(std::vector<node*> graph_nodes) = 0;
+        virtual void step(std::vector<autograd::node*> graph_nodes) = 0;
 
     protected:
         double m_lr;
@@ -23,10 +25,10 @@ class SDG : public optimizer
 {
     public:
         SDG(double lr = 0.01) : optimizer(lr){};
-        void step(std::vector<node*> graph_nodes);
+        void step(std::vector<autograd::node*> graph_nodes);
 };
 
-void SDG::step(std::vector<node*> graph_nodes)
+void SDG::step(std::vector<autograd::node*> graph_nodes)
 {
     for(auto& x : graph_nodes)
     {
@@ -39,5 +41,6 @@ void SDG::step(std::vector<node*> graph_nodes)
     }
 }
 
+}//namespace nn
 }//namespace czy
 

@@ -1,13 +1,14 @@
 #pragma once
 
 #include "session.hpp"
-#include "tensor.hpp"
-#include "tensor_ops.hpp"
+#include "../tensor/tensor.hpp"
+#include "../tensor/tensor_ops.hpp"
 
 #include <functional>
 #include <vector>
 
 namespace czy{
+namespace autograd{
 
 class node
 {
@@ -411,6 +412,6 @@ node& node::sigmoid()
     return *out;
 }
 
-
+}//namespace autograd
 }//namespace czy
 

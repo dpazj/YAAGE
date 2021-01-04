@@ -1,7 +1,7 @@
 #pragma once
 
 #include "tensor_shape.hpp"
-#include "utils.hpp"
+#include "../utils.hpp"
 
 #include <initializer_list>
 #include <memory>

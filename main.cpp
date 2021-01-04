@@ -9,6 +9,8 @@
 #include "cozygrad/cozygrad.h"
 
 using namespace czy;
+using namespace czy::autograd;
+using namespace czy::nn;
 
 void sanity_test()
 {
@@ -110,7 +112,7 @@ void do_moon()
     double learning_rate = 0.05;
     SDG optim(learning_rate);
     MoonNet model;
-    model.train(X,y, optim, 25, hinge);
+    model.train(X,y, optim, 25, loss::hinge);
 
     // process pair (a,b)
 }

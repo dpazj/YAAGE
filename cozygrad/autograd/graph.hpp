@@ -7,6 +7,7 @@
 #include <algorithm>
 
 namespace czy{
+namespace autograd{
 
 class graph
 {
@@ -82,6 +83,8 @@ void graph::populate_exec_order(node* node)
     }
 } 
 
+
+} //namespace autograd
 }//namespace czy
 
 

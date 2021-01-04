@@ -1,19 +1,20 @@
 #pragma once
 
-#include "node.hpp"
-#include "tensor.hpp"
-#include "graph.hpp"
-#include "session.hpp"
+#include "tensor/tensor.hpp"
+#include "autograd/node.hpp"
+#include "autograd/graph.hpp"
+#include "autograd/session.hpp"
+#include "nn/model.hpp"
+#include "nn/optim.hpp"
+#include "nn/loss_functions.hpp"
 #include "utils.hpp"
-#include "model.hpp"
-#include "optim.hpp"
-#include "loss_functions.hpp"
+
 
 namespace czy{
 namespace utils{
 
 void clean_session(){
-    Session& session = Session::get_session();
+    autograd::Session& session = autograd::Session::get_session();
         
     for(auto* x : session.get_session_nodes())
     {

@@ -1,32 +1,35 @@
 #pragma once
 
 #include "optim.hpp"
-#include "tensor.hpp"
-#include "node.hpp"
-#include "graph.hpp"
+#include "../tensor/tensor.hpp"
+#include "../autograd/node.hpp"
+#include "../autograd/graph.hpp"
+#include "../autograd/session.hpp"
 
 #include <vector>
 #include <functional>
 
+
 namespace czy{
-    
+namespace nn{
+
 class model
 {
     public: 
         ~model();
 
-        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, size_t epochs, std::function<node&(node&,node&)> loss_fn);
+        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, size_t epochs, std::function<autograd::node&(autograd::node&,autograd::node&)> loss_fn);
         //void evaluate();
-        virtual node& create_model() = 0;
+        virtual autograd::node& create_model() = 0;
 
     protected:
         //model builder api
-        node& create_input_node();
-        node& create_model_param(size_t m, size_t n); //shape
+        autograd::node& create_input_node();
+        autograd::node& create_model_param(size_t m, size_t n); //shape
 
     private:
         std::vector<tensor*> m_model_parameters;
-        node* m_input_node = nullptr;
+        autograd::node* m_input_node = nullptr;
 };
 
 model::~model()
@@ -37,11 +40,11 @@ model::~model()
     }
 }
 
-node& model::create_input_node()
+autograd::node& model::create_input_node()
 {
-    node* input = new node();
+    autograd::node* input = new autograd::node();
 
-    Session& session = Session::get_session();
+    autograd::Session& session = autograd::Session::get_session();
     session.add_node(input);
 
     m_input_node = input;
@@ -49,28 +52,28 @@ node& model::create_input_node()
     return *input;
 }
 
-node& model::create_model_param(size_t m, size_t n)
+autograd::node& model::create_model_param(size_t m, size_t n)
 {
     tensor* param = new tensor(m,n);
     param->random(-1.0f,1.0f); // initialises the parameters to random (-1, 1) 
     m_model_parameters.push_back(param);
 
-    node* out = new node(param);
+    autograd::node* out = new autograd::node(param);
 
-    Session& session = Session::get_session();
+    autograd::Session& session = autograd::Session::get_session();
     session.add_node(out);
 
     return *out;
 }
 
-void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, size_t epochs, std::function<node&(node&,node&)> loss_fn)
+void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, size_t epochs, std::function<autograd::node&(autograd::node&,autograd::node&)> loss_fn)
 {
     auto& model = create_model();
-    node label;
+    autograd::node label;
 
     auto& loss = loss_fn(label, model);
  
-    graph g(loss);
+    autograd::graph g(loss);
 
     for(size_t k=0; k < epochs; k++){
         tensor av_loss = {0};
@@ -92,7 +95,7 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, op
 
 }
 
-
+}//namespace nn
 }//namespace czy
 
 
