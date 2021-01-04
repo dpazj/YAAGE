@@ -5,7 +5,6 @@
 #include <vector>
 
 class node;
-
 //class manages allocated memory and in future gpu stuff 
 class Session
 {

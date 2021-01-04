@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tensor_shape.hpp"
+#include "utils.hpp"
 
 #include <initializer_list>
 #include <memory>
@@ -23,7 +24,7 @@ class tensor
         void of_value(double val);
         void zeros();
         void ones();
-        void random(double min = -1, double max = 1, int seed = 1337);
+        void random(double min = -1, double max = 1);
 
 
         double* data() const;
@@ -134,13 +135,11 @@ void tensor::of_value(double val)
 void tensor::zeros(){of_value(0.0f);}
 void tensor::ones(){of_value(1.0f);}
 
-void tensor::random(double min, double max, int seed)
+void tensor::random(double min, double max)
 {
-    std::mt19937 gen(seed);
-    std::uniform_real_distribution<double> dis(min, max);
     for(size_t i=0; i< m_size; i++)
     {
-        m_data[i] = dis(gen);
+        m_data[i] = utils::get_rand_double(min, max);
     }
 }
 
@@ -266,7 +265,8 @@ tensor tensor::operator*(const tensor& rhs)
 {
     if(m_size != rhs.m_size)
     {
-        throw std::runtime_error("tensor shapes not the same");
+        std::cout << m_size << " " << rhs.m_size << std::endl;
+        throw std::runtime_error("mul: tensor shapes not the same");
     }
 
     tensor out(m_rows, m_columns);

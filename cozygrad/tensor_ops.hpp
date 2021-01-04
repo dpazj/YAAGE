@@ -109,7 +109,6 @@ namespace op{
             for (size_t j = 0; j < N; j++)
             {
                 double acc = 0.0f;
-
                 size_t a_offset = K * i;
 
                 for (size_t k = 0; k < K; k++)

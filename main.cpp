@@ -6,7 +6,12 @@
 #include <string>
 #include <stdlib.h>
 
-#include "cozygrad/cozygrad.h"
+#include "cozygrad/node.hpp"
+#include "cozygrad/graph.hpp"
+#include "cozygrad/tensor.hpp"
+#include "cozygrad/utils.hpp"
+#include "cozygrad/model.hpp"
+
 
 
 
@@ -74,10 +79,10 @@ class MoonNet : public model
         auto& b2 = create_model_param(1,16);
         auto& b3 = create_model_param(1,1);
 
-        auto& l1 = (input.dot(w1) + b1).relu(); //;layer 1
-        auto& l2 = (l1.dot(w2) + b2).relu();
-        auto& l3 = (l2.dot(w3) + b3).sigmoid();
-
+        auto& l1 = (input.dot(w1) + b1).relu(); //layer 1
+        auto& l2 = (l1.dot(w2) + b2).relu(); //layer 2
+        auto& l3 = (l2.dot(w3) + b3); //layer 3
+        
         return l3;
     }
   
@@ -105,7 +110,7 @@ void do_moon()
     {
         auto vals = split(line, ',');
         tensor tmp = {atof(vals[0].c_str()), atof(vals[1].c_str())};
-        tensor tmp1 = {atof(vals[2].c_str()) * 2 - 1};
+        tensor tmp1 = {atof(vals[2].c_str()) * 2 -1};
         X.push_back(tmp);
         y.push_back(tmp1); 
     }
@@ -119,15 +124,21 @@ void do_moon()
 
 
 
+
+
 int main()
 {
-
-    // do_moon();
-    sanity_test();
-    test1();
+    //sanity_test();
+    //test1();
     //test2();
 
-    utils::clean_session();
+    do_moon();
+
+    Session& session = Session::get_session();
+    for(node* x : session.get_session_nodes())
+    {
+        delete x;
+    }
     
     return 0;
 

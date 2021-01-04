@@ -7,6 +7,8 @@
 #include <functional>
 #include <vector>
 
+class Session;
+
 class node
 {
     public:
@@ -145,6 +147,7 @@ node& node::operator=(const node& other)
     m_children = other.m_children;
     m_backward = other.m_backward;
     m_forward = other.m_forward;
+    m_data_updatable = other.m_data_updatable;
 
     return *this;
 }
@@ -194,25 +197,13 @@ node& node::operator+(double other)
     return *out;
 }
 
-node& node::operator-()
-{
-    return *this * -1;
-}
+node& operator+(double other, node& rhs){ return rhs + other;}
 
-node& node::operator-(node& other)
-{
-    return *this + (-other);
-}
 
-node& node::operator-(double other)
-{
-    return *this + (-other);
-}
-
-node& operator-(double other, node& rhs)
-{
-    return (-rhs) + other;
-}
+node& node::operator-(){ return *this * -1;}
+node& node::operator-(node& other){ return *this + (-other);}
+node& node::operator-(double other){ return *this + (-other);}
+node& operator-(double other, node& rhs){ return (-rhs) + other;}
 
 node& node::operator*(node& other)
 {
