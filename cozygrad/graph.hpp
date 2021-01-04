@@ -17,7 +17,7 @@ class graph
         void backwards();
         void zero_gradients();
 
-        std::vector<node*> get_unique_nodes(){return m_exec_order;};
+        std::vector<node*> get_nodes();
 
     private:
         node* m_output_node;
@@ -38,6 +38,8 @@ graph::graph(node * output)
     m_reverse_exec_order = m_exec_order;
     std::reverse(m_reverse_exec_order.begin(), m_reverse_exec_order.end());
 }
+
+std::vector<node*> graph::get_nodes(){return m_exec_order;};
 
 void graph::forwards()
 {

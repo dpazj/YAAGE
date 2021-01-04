@@ -111,33 +111,12 @@ void do_moon()
         y.push_back(tmp1); 
     }
 
+    double learning_rate = 0.05;
+    SDG optim(learning_rate);
     MoonNet model;
-
-    model.train(X,y);
+    model.train(X,y, optim);
 
     // process pair (a,b)
-}
-
-
-#include "cozygrad/cozygrad.h"
-
-void example1()
-{
-    tensor t = {-8.0};
-
-    node x(t);
-    auto& a = 42 - x;
-    auto& b = a.pow(2) + a;
-    auto& c = b.log() * x;
-    auto& y = -c;
-
-    //construct a graph
-    graph g(y);
-    g.forwards();
-    g.backwards();
-
-    y.data()->print(); // 62.7508
-    x.gradient()->print(); // dy/dx -8.16071
 }
 
 
@@ -147,7 +126,7 @@ int main()
     //sanity_test();
     //test1();
     //test2();
-    example1();
+
 
     do_moon();
 

@@ -72,8 +72,10 @@ class MyNet : public model
 int main()
 {
     //... code to get dataset X and y ...
+    double learning_rate = 0.05;
+    SDG sdg(learning_rate);
     MyNet model;
-    model.train(X,y);
+    model.train(X,y, sdg);
 }
 
 

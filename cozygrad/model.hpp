@@ -1,5 +1,6 @@
 #pragma once
 
+#include "optim.hpp"
 #include "tensor.hpp"
 #include "node.hpp"
 #include "graph.hpp"
@@ -9,10 +10,9 @@
 class model
 {
     public: 
-        model(); //optimiser, batch size, loss function
         ~model();
 
-        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train);
+        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim);
         //void evaluate();
 
         virtual node& create_model() = 0;
@@ -27,10 +27,7 @@ class model
         node* m_input_node = nullptr;
 };
 
-model::model()
-{
 
-}
 
 model::~model()
 {
@@ -66,9 +63,9 @@ node& model::create_model_param(size_t m, size_t n)
     return *out;
 }
 
-void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train)
+void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim)
 {
-    double learning_rate = 0.05;
+    //double learning_rate = 0.05;
     size_t epoch = 25;
     auto& model = create_model();
 
@@ -76,12 +73,9 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train)
     
     node label;
 
-
     auto& loss = ((1 + (-label*model)).relu()).sum();
  
     graph g(loss);
-
-    
 
     for(size_t k=0; k < epoch; k++){
         tensor av_loss = {0};
@@ -94,16 +88,18 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train)
             g.backwards();
 
             //sdg
-            for(auto& x : g.get_unique_nodes())
-            {
-                if(x->updatable())
-                {
-                    tensor* data = x->data(); 
-                    tensor* grad = x->gradient();
-                    *data = *data - (learning_rate * *grad);
-                }
-            }
-            
+            // for(auto& x : g.get_unique_nodes())
+            // {
+            //     if(x->updatable())
+            //     {
+            //         tensor* data = x->data(); 
+            //         tensor* grad = x->gradient();
+            //         *data = *data - (learning_rate * *grad);
+            //     }
+            // }
+            optim.step(g.get_nodes());
+
+
             av_loss = av_loss + *loss.data();
             
             g.zero_gradients();
