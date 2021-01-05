@@ -11,25 +11,24 @@
 
 
 namespace czy{
-namespace nn{
 
 class model
 {
     public: 
         ~model();
 
-        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, size_t epochs, std::function<autograd::node&(autograd::node&,autograd::node&)> loss_fn);
+        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, unsigned int epochs, std::function<node&(node&,node&)> loss_fn);
         //void evaluate();
-        virtual autograd::node& create_model() = 0;
+        virtual node& create_model() = 0;
 
     protected:
         //model builder api
-        autograd::node& create_input_node();
-        autograd::node& create_model_param(size_t m, size_t n); //shape
+        node& create_input_node();
+        node& create_model_param(size_t m, size_t n); //shape
 
     private:
         std::vector<tensor*> m_model_parameters;
-        autograd::node* m_input_node = nullptr;
+        node* m_input_node = nullptr;
 };
 
 model::~model()
@@ -40,11 +39,11 @@ model::~model()
     }
 }
 
-autograd::node& model::create_input_node()
+node& model::create_input_node()
 {
-    autograd::node* input = new autograd::node();
+    node* input = new node();
 
-    autograd::Session& session = autograd::Session::get_session();
+    Session& session = Session::get_session();
     session.add_node(input);
 
     m_input_node = input;
@@ -52,28 +51,28 @@ autograd::node& model::create_input_node()
     return *input;
 }
 
-autograd::node& model::create_model_param(size_t m, size_t n)
+node& model::create_model_param(size_t m, size_t n)
 {
     tensor* param = new tensor(m,n);
     param->random(-1.0f,1.0f); // initialises the parameters to random (-1, 1) 
     m_model_parameters.push_back(param);
 
-    autograd::node* out = new autograd::node(param);
+    node* out = new node(param);
 
-    autograd::Session& session = autograd::Session::get_session();
+    Session& session = Session::get_session();
     session.add_node(out);
 
     return *out;
 }
 
-void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, size_t epochs, std::function<autograd::node&(autograd::node&,autograd::node&)> loss_fn)
+void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, unsigned int epochs, std::function<node&(node&,node&)> loss_fn)
 {
     auto& model = create_model();
-    autograd::node label;
+    node label;
 
     auto& loss = loss_fn(label, model);
  
-    autograd::graph g(loss);
+    graph g(loss);
 
     for(size_t k=0; k < epochs; k++){
         tensor av_loss = {0};
@@ -95,7 +94,6 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, op
 
 }
 
-}//namespace nn
 }//namespace czy
 
 

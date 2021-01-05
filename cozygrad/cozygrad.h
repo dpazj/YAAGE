@@ -14,7 +14,7 @@ namespace czy{
 namespace utils{
 
 void clean_session(){
-    autograd::Session& session = autograd::Session::get_session();
+    Session& session = Session::get_session();
         
     for(auto* x : session.get_session_nodes())
     {

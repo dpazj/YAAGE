@@ -70,24 +70,25 @@ class MyNet : public model
         
         return l3;
     }
-
 };
 
 int main()
 {
-    //... code to get dataset X and y ...
+    //... code to get dataset X and y...
     double learning_rate = 0.05;
-    SDG sdg(learning_rate);
-    MyNet model;
-    model.train(X,y, sdg);
+    unsigned int epoch = 25;
+    SDG optim(learning_rate);
+    MoonNet model;
+    model.train(X,y, optim, epoch, loss::hinge);
 
     //clean up
     utils::clean_session();
 }
 ```
 ## TODO
-* Get simple MNIST working & training.
+* Get MNIST working & training.
 * Make tensor class better - n dimensions, broadcasting etc
 * GPU support!
+* Optimize
 
 

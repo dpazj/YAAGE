@@ -8,7 +8,6 @@
 #include <vector>
 
 namespace czy{
-namespace autograd{
 
 class node
 {
@@ -401,7 +400,7 @@ node& node::sigmoid()
     };
 
     std::function<void()> backward = [&, out](){
-       auto der = *out->m_data * (1 - *out->m_data);
+       auto der = *out->m_gradient * *out->m_data * (1 - *out->m_data);
        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
 
@@ -412,6 +411,5 @@ node& node::sigmoid()
     return *out;
 }
 
-}//namespace autograd
 }//namespace czy
 

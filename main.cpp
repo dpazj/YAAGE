@@ -9,8 +9,6 @@
 #include "cozygrad/cozygrad.h"
 
 using namespace czy;
-using namespace czy::autograd;
-using namespace czy::nn;
 
 void sanity_test()
 {
@@ -77,7 +75,7 @@ class MoonNet : public model
 
         auto& l1 = (input.dot(w1) + b1).relu(); //layer 1
         auto& l2 = (l1.dot(w2) + b2).relu(); //layer 2
-        auto& l3 = (l2.dot(w3) + b3); //layer 3
+        auto& l3 = (l2.dot(w3) + b3).sigmoid(); //layer 3
         
         return l3;
     }
@@ -104,17 +102,16 @@ void do_moon()
     {
         auto vals = split(line, ',');
         tensor tmp = {atof(vals[0].c_str()), atof(vals[1].c_str())};
-        tensor tmp1 = {atof(vals[2].c_str()) * 2 -1};
+        tensor tmp1 = {atof(vals[2].c_str())};
         X.push_back(tmp);
         y.push_back(tmp1); 
     }
 
     double learning_rate = 0.05;
+    unsigned int epoch = 25;
     SDG optim(learning_rate);
     MoonNet model;
-    model.train(X,y, optim, 25, loss::hinge);
-
-    // process pair (a,b)
+    model.train(X,y, optim, epoch, loss::binary_cross_entropy);
 }
 
 int main()
