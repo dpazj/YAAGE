@@ -48,6 +48,7 @@ class node
         node& dot(node& other);
         node& pow(double exponent);
         node& sum();
+        node& mean();
         node& exp();
         node& log();
         node& sigmoid();
@@ -368,6 +369,32 @@ node& node::sum()
     out->name = "sum";
 
     return *out;
+}
+
+//this will need to be changed in future to work with more dimensions
+node& node::mean()
+{
+    node* out = create_node();
+    out->add_child(this);
+
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = op::sum(*m_data) / m_data->size();
+    };
+
+    std::function<void()> backward = [&, out](){
+        //this is the bit that will need changed : )
+        double x = out->m_gradient->data()[0] / m_data->size();
+        auto der = tensor(m_data->rows(), m_data->columns());
+        der.of_value(x);
+        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+    };
+
+    out->m_forward = forward;
+    out->m_backward = backward;
+    out->name = "mean";
+
+    return *out;
+
 }
 
 node& node::exp()

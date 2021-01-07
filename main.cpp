@@ -123,10 +123,20 @@ class MnistNet : public model
         auto& input = create_input_node();
 
         auto& w1 = create_model_param(784,128);
-        auto& w2 = create_model_param(128,10);
+        auto& w2 = create_model_param(128,128);
+        auto& w3 = create_model_param(128,10);
+
+        auto& b1 = create_model_param(1,128);
+        auto& b2 = create_model_param(1,128);
+        auto& b3 = create_model_param(1,10);
 
         //return input.dot(w1).relu().dot(w2).logsoftmax();
-        return input.dot(w1).relu().dot(w2).sigmoid();
+
+        auto& l1 = (input.dot(w1) + b1).relu(); //layer 1
+        auto& l2 = (l1.dot(w2) + b2).relu(); //layer 2
+        auto& l3 = (l2.dot(w3) + b3).sigmoid(); //layer 3
+        
+        return l3;
     }
 };
 
@@ -167,7 +177,7 @@ void do_mnist()
 
     //get inputs
     size_t img_size = 28 * 28;
-    for(size_t i = 0; i < 1; i+=img_size) //train_x_bytes.size()
+    for(size_t i = 0; i < train_x_bytes.size(); i+=img_size) //train_x_bytes.size()
     {
         tensor tmp(1,img_size);
         for(size_t j = 0; j < img_size; j++)
@@ -178,7 +188,7 @@ void do_mnist()
     }
 
     double learning_rate = 0.001;
-    unsigned int epoch = 200;
+    unsigned int epoch = 10;
     SDG optim(learning_rate);
     MnistNet model;
     
@@ -192,9 +202,10 @@ int main()
     //sanity_test();
     //test1();
     //test2();
-    do_moon();
+    
+    //do_moon();
 
-    //do_mnist();
+    do_mnist();
 
     utils::clean_session();
 

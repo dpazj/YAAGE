@@ -21,7 +21,7 @@ namespace loss{
     {
 
        // double n = y.data()->rows(); // change this in future :) 
-        return (y - yhat).pow(2).sum();// / n;
+        return (y - yhat).pow(2).mean();// / n;
     }
 
 }//namespace loss
