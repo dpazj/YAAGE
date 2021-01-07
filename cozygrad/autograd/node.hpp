@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <vector>
+#include <math.h>
 
 namespace czy{
 
@@ -40,6 +41,8 @@ class node
         node& operator-(double other);
         node& operator*(double other);
         node& operator*(node& other);
+        node& operator/(double other);
+        node& operator/(node& other);
 
         node& relu();
         node& dot(node& other);
@@ -48,6 +51,8 @@ class node
         node& exp();
         node& log();
         node& sigmoid();
+        node& softmax();
+        node& logsoftmax();
 
     private:
 
@@ -254,6 +259,23 @@ node& operator*(double other, node& node)
     return node * other;
 }
 
+//div
+
+node& node::operator/(double other)
+{
+    return *this * std::pow(other, -1);
+}
+
+node& node::operator/(node& other)
+{
+    return *this * other.pow(-1);
+}
+
+node& operator/(double other, node& node)
+{
+    return other * node.pow(-1);
+}
+
 //relu
 node& node::relu()
 {
@@ -392,24 +414,21 @@ node& node::log()
 
 node& node::sigmoid()
 {
-    node* out = create_node();
-    out->add_child(this);
-
-    std::function<void()> forward = [&, out](){ 
-        *out->m_data = 1 / (1 + op::exp(-*m_data));
-    };
-
-    std::function<void()> backward = [&, out](){
-       auto der = *out->m_gradient * *out->m_data * (1 - *out->m_data);
-       *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
-    };
-
-    out->m_forward = forward;
-    out->m_backward = backward;
-    out->name = "sigmoid";
-
-    return *out;
+    return 1 / (1 + (-*this).exp());
 }
+
+node& node::softmax()
+{
+    //need to add broadcasting for this to work : )
+    return this->exp() / this->exp().sum();
+}
+
+node& node::logsoftmax()
+{
+    return this->softmax().log();
+}
+ 
+
 
 }//namespace czy
 

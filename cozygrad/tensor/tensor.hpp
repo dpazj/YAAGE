@@ -29,7 +29,6 @@ class tensor
         void ones();
         void random(double min = -1, double max = 1);
 
-
         double* data() const;
         size_t size() const;
         void print();
@@ -40,6 +39,7 @@ class tensor
 
 
         //operators
+        double& operator[](size_t i);
         tensor& operator=(const tensor& rhs);
 
         tensor operator+(const tensor& rhs);
@@ -165,6 +165,8 @@ void tensor::print()
 }
 
 //operators
+double& tensor::operator[](size_t i){return m_data[i];};
+
 tensor& tensor::operator=(const tensor& rhs)
 {
     if(m_data != nullptr)
@@ -220,7 +222,7 @@ tensor tensor::operator-(const tensor& rhs)
 {
     if(m_size != rhs.m_size)
     {
-        throw std::runtime_error("tensor shapes not the same");
+        throw std::runtime_error("sub: tensor shapes not the same");
     }
 
     tensor out(m_rows, m_columns);
@@ -268,8 +270,7 @@ tensor tensor::operator*(const tensor& rhs)
 {
     if(m_size != rhs.m_size)
     {
-        std::cout << m_size << " " << rhs.m_size << std::endl;
-        throw std::runtime_error("mul: tensor shapes not the same");
+        throw std::runtime_error("mul: tensor shapes not the same: got " + std::to_string(m_size) + " and " + std::to_string(rhs.m_size) );
     }
 
     tensor out(m_rows, m_columns);

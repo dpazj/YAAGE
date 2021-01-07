@@ -112,6 +112,79 @@ void do_moon()
     SDG optim(learning_rate);
     MoonNet model;
     model.train(X,y, optim, epoch, loss::binary_cross_entropy);
+    model.evaluate(X,y);
+}
+
+
+class MnistNet : public model
+{
+    node& create_model()
+    {
+        auto& input = create_input_node();
+
+        auto& w1 = create_model_param(784,128);
+        auto& w2 = create_model_param(128,10);
+
+        //return input.dot(w1).relu().dot(w2).logsoftmax();
+        return input.dot(w1).relu().dot(w2).sigmoid();
+    }
+};
+
+
+
+void do_mnist()
+{
+    std::vector<tensor> X;
+    std::vector<tensor> y;
+
+    std::ifstream train_x_file("./datasets/mnist/train-images-idx3-ubyte", std::ios::binary);
+    std::ifstream train_y_file("./datasets/mnist/train-labels-idx1-ubyte", std::ios::binary);
+
+    std::cout << "loading dataset..." << std::endl;
+    std::vector<char> train_x_bytes((std::istreambuf_iterator<char>(train_x_file)), (std::istreambuf_iterator<char>()));
+    std::vector<char> train_y_bytes((std::istreambuf_iterator<char>(train_y_file)), (std::istreambuf_iterator<char>()));
+
+    //get rid format bytes
+    train_x_bytes.erase(train_x_bytes.begin(), train_x_bytes.begin() + 16); 
+    train_y_bytes.erase(train_y_bytes.begin(), train_y_bytes.begin() + 8);
+
+    train_x_file.close();
+    train_y_file.close();
+    std::cout << "done loading dataset" << std::endl;
+    std::cout << "traning samples: " << (train_x_bytes.size()) / 784 << std::endl;
+
+    std::cout << train_x_bytes.size() << std::endl;
+
+    //get labels
+    for(size_t i = 0; i < train_y_bytes.size(); i++) //train_y_bytes.size()
+    {
+        size_t index = (size_t) train_y_bytes[i];
+        tensor tmp(1,10);
+        tmp.zeros();
+        tmp[index] = 1.0f;
+        y.push_back(tmp);
+    }
+
+    //get inputs
+    size_t img_size = 28 * 28;
+    for(size_t i = 0; i < 1; i+=img_size) //train_x_bytes.size()
+    {
+        tensor tmp(1,img_size);
+        for(size_t j = 0; j < img_size; j++)
+        {
+            tmp[j] = (double) (unsigned char) train_x_bytes[i + j] / 255; //scale to 0-1;
+        }
+        X.push_back(tmp);
+    }
+
+    double learning_rate = 0.001;
+    unsigned int epoch = 200;
+    SDG optim(learning_rate);
+    MnistNet model;
+    
+    model.train(X,y, optim, epoch, loss::mean_squared_error);
+    
+
 }
 
 int main()
@@ -120,6 +193,8 @@ int main()
     //test1();
     //test2();
     do_moon();
+
+    //do_mnist();
 
     utils::clean_session();
 
