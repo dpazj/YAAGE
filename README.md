@@ -86,8 +86,8 @@ int main()
 }
 ```
 ## TODO
-* Get MNIST working & training.
-* Make tensor class better - n dimensions, broadcasting etc
+* Batch training - need n dimension tensor with broadcasting - fun
+* Get MNIST working & training properly. - need to add batching as above
 * GPU support!
 * Optimize
 

@@ -92,8 +92,6 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, op
         for(size_t i=0; i < x_train.size();i++)
         {
             //std::cout << "\r" << i << "/" << x_train.size();
-
-
             m_input_node->set_data(&x_train[i]);
             label.set_data(&y_train[i]);
 
@@ -101,8 +99,6 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, op
             g.backwards();
             optim.step(g.nodes());
             g.zero_gradients();
-
-            model.data()->print();
 
             //stats
             av_loss = av_loss + *loss.data();

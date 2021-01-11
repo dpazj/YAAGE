@@ -48,7 +48,7 @@ void test1()
 
 void test2()
 {
-    tensor input = {24.0f};
+    tensor input = {-24.0f};
     node x(input);
     node y = x.sigmoid();
     graph g(y);
@@ -108,7 +108,7 @@ void do_moon()
     }
 
     double learning_rate = 0.05;
-    unsigned int epoch = 25;
+    unsigned int epoch = 5;
     SDG optim(learning_rate);
     MoonNet model;
     model.train(X,y, optim, epoch, loss::binary_cross_entropy);
@@ -116,84 +116,26 @@ void do_moon()
 }
 
 
-class MnistNet : public model
+
+
+void test3()
 {
-    node& create_model()
-    {
-        auto& input = create_input_node();
+    tensor a = {0,0,0,0,0,1,0,0,0,0};
+    //tensor b = {1, 1, -0.000119375, -4.64622e-05, 0.000252165, 0.00224447, 3.8342e-05, 0.000133732, 9.79701e-05 ,3.23683e-05}; 
+    tensor b = {0, 1, -5.68027e-05, 0.000103058, 0.000231966, 7.61339e-05, 0.00019536, -0.000125528, 0.000223787, 9.07328e-05};
+    //tensor b = {1,0,0,0,0,0,0,0,0,0};
 
-        auto& w1 = create_model_param(784,128);
-        auto& w2 = create_model_param(128,128);
-        auto& w3 = create_model_param(128,10);
+    node y(a);
+    node yh(b);
 
-        auto& b1 = create_model_param(1,128);
-        auto& b2 = create_model_param(1,128);
-        auto& b3 = create_model_param(1,10);
+    auto z = loss::mean_squared_error(y, yh);
 
-        //return input.dot(w1).relu().dot(w2).logsoftmax();
+    graph g(z);
+    g.forwards();
+    g.backwards();
 
-        auto& l1 = (input.dot(w1) + b1).relu(); //layer 1
-        auto& l2 = (l1.dot(w2) + b2).relu(); //layer 2
-        auto& l3 = (l2.dot(w3) + b3).sigmoid(); //layer 3
-        
-        return l3;
-    }
-};
-
-
-
-void do_mnist()
-{
-    std::vector<tensor> X;
-    std::vector<tensor> y;
-
-    std::ifstream train_x_file("./datasets/mnist/train-images-idx3-ubyte", std::ios::binary);
-    std::ifstream train_y_file("./datasets/mnist/train-labels-idx1-ubyte", std::ios::binary);
-
-    std::cout << "loading dataset..." << std::endl;
-    std::vector<char> train_x_bytes((std::istreambuf_iterator<char>(train_x_file)), (std::istreambuf_iterator<char>()));
-    std::vector<char> train_y_bytes((std::istreambuf_iterator<char>(train_y_file)), (std::istreambuf_iterator<char>()));
-
-    //get rid format bytes
-    train_x_bytes.erase(train_x_bytes.begin(), train_x_bytes.begin() + 16); 
-    train_y_bytes.erase(train_y_bytes.begin(), train_y_bytes.begin() + 8);
-
-    train_x_file.close();
-    train_y_file.close();
-    std::cout << "done loading dataset" << std::endl;
-    std::cout << "traning samples: " << (train_x_bytes.size()) / 784 << std::endl;
-
-    std::cout << train_x_bytes.size() << std::endl;
-
-    //get labels
-    for(size_t i = 0; i < train_y_bytes.size(); i++) //train_y_bytes.size()
-    {
-        size_t index = (size_t) train_y_bytes[i];
-        tensor tmp(1,10);
-        tmp.zeros();
-        tmp[index] = 1.0f;
-        y.push_back(tmp);
-    }
-
-    //get inputs
-    size_t img_size = 28 * 28;
-    for(size_t i = 0; i < train_x_bytes.size(); i+=img_size) //train_x_bytes.size()
-    {
-        tensor tmp(1,img_size);
-        for(size_t j = 0; j < img_size; j++)
-        {
-            tmp[j] = (double) (unsigned char) train_x_bytes[i + j] / 255; //scale to 0-1;
-        }
-        X.push_back(tmp);
-    }
-
-    double learning_rate = 0.001;
-    unsigned int epoch = 10;
-    SDG optim(learning_rate);
-    MnistNet model;
-    
-    model.train(X,y, optim, epoch, loss::mean_squared_error);
-    
+    z.data()->print();
+    yh.gradient()->print();
 
 }
 
@@ -202,7 +144,7 @@ int main()
     //sanity_test();
     //test1();
     //test2();
-    
+    //test3();
     //do_moon();
 
     do_mnist();

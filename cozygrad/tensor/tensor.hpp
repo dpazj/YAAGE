@@ -160,8 +160,9 @@ void tensor::print()
         {
             std::cout << m_data[offset + j] << " ";
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
     }
+    std::cout << std::endl;
 }
 
 //operators
