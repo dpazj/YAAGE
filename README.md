@@ -78,7 +78,7 @@ int main()
     double learning_rate = 0.05;
     unsigned int epoch = 25;
     SDG optim(learning_rate);
-    MoonNet model;
+    MyNet model;
     model.train(X,y, optim, epoch, loss::hinge);
 
     //clean up
