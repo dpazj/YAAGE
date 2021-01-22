@@ -64,8 +64,8 @@ class node
         bool m_owns_gradient = true;
         bool m_data_updatable = false;
 
-        std::function<void()> m_forward = [](){};
-        std::function<void()> m_backward = [](){};
+        // std::function<void()> m_forward = [](){};
+        // std::function<void()> m_backward = [](){};
 
         std::vector<node*> m_children;
         std::vector<node*> m_node_references;
@@ -104,8 +104,8 @@ node::~node()
     }  
 }
 
-void node::forward(){m_forward();}
-void node::backward(){m_backward();}
+// void node::forward(){m_forward();}
+// void node::backward(){m_backward();}
 
 void node::set_data(tensor* x)
 {
@@ -455,7 +455,5 @@ node& node::logsoftmax()
     return this->softmax().log();
 }
  
-
-
 }//namespace czy
 

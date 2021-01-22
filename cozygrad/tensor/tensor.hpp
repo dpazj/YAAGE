@@ -1,16 +1,17 @@
 #pragma once
 
-#include "tensor_shape.hpp"
 #include "../utils.hpp"
 
 #include <initializer_list>
 #include <memory>
-#include <iostream>
+#include <ostream>
 #include <cstring>
 #include <random>
+#include <functional>
 
 
 typedef unsigned long size_t;
+typedef std::vector<size_t> tensor_shape;
 
 namespace czy{
 
@@ -19,9 +20,10 @@ class tensor
     public:
         tensor();
         tensor(const tensor& x);
-        tensor(size_t m, size_t n);
+        tensor(tensor_shape& shape);
         tensor(std::initializer_list<double> il);
         tensor(std::initializer_list<std::initializer_list<double>> il);
+        tensor(std::initializer_list<std::initializer_list<std::initializer_list<double>>> il);
         ~tensor();
 
         void of_value(double val);
@@ -31,37 +33,38 @@ class tensor
 
         double* data() const;
         size_t size() const;
-        void print();
+        void print(std::ostream& os);
+        void print_shape(std::ostream& os);
 
-        //we need to change this to shape at some point
-        size_t columns() const;
-        size_t rows() const;
+        tensor_shape shape() const;
+        
 
 
         //operators
         double& operator[](size_t i);
         tensor& operator=(const tensor& rhs);
 
-        tensor operator+(const tensor& rhs);
+        // tensor operator+(const tensor& rhs);
 
-        tensor operator-(const tensor& rhs);
-        tensor operator-();
+        // tensor operator-(const tensor& rhs);
+        // tensor operator-();
 
-        tensor operator*(const tensor& rhs);
-        tensor operator*(const double rhs);
+        // tensor operator*(const tensor& rhs);
+        // tensor operator*(const double rhs);
 
-        tensor operator/(const tensor& rhs);
-        tensor operator/(const double rhs);
+        // tensor operator/(const tensor& rhs);
+        // tensor operator/(const double rhs);
 
-        tensor operator>(double val);
-        tensor operator<(double val);
+        // tensor operator>(double val);
+        // tensor operator<(double val);
 
     private:
 
+        size_t calculate_size();
         double* m_data = nullptr;
         size_t m_size = 0;
-        size_t m_rows = 0;
-        size_t m_columns = 0;
+        std::vector<size_t> m_shape;
+
 };
 
 tensor::~tensor()
@@ -72,60 +75,80 @@ tensor::~tensor()
     }
 }
 
-tensor::tensor(){}
+tensor::tensor() : m_shape()
+{
+
+}
 
 tensor::tensor(const tensor& x)
 {
     *this = x;
 }
 
-tensor::tensor(size_t m, size_t n)
-{
-    m_rows = m;
-    m_columns = n;
-    m_size = m * n;
-    m_data = new double[m_size];
-}
 
 tensor::tensor(std::initializer_list<double> il)
 {
- 
-    m_rows = 1;
-    m_columns = il.size();
-    m_size = m_rows * m_columns;
+    m_shape = {il.size()};
+    m_size = calculate_size();
     m_data = new double[m_size];
 
     size_t i = 0;
-    for(auto row : il)
+    for(auto x : il)
     {
-        m_data[i] = row;
+        m_data[i] = x;
         i++;
     }
 }
 
 tensor::tensor(std::initializer_list<std::initializer_list<double>> il)
 {
-    m_rows = il.size();
-    m_columns = il.begin()->size();
-    m_size = m_rows * m_columns;
-    
+    m_shape = {il.size(), il.begin()->size()};
+    m_size = calculate_size();
     m_data = new double[m_size];
 
     size_t i = 0;
     for(auto row : il)
     {
         size_t j = 0;
-        if(row.size() != m_columns){
+        if(row.size() != il.begin()->size()){
             throw std::runtime_error("init list rows must be of the same length!");
         }
         for(auto col : row)
         {
-            m_data[(i * m_columns) + j] = col;
+            m_data[(i * il.begin()->size()) + j] = col;
             j++;
         }
         i++;
     }
 }
+
+tensor::tensor(std::initializer_list<std::initializer_list<std::initializer_list<double>>> il)
+{
+    m_shape = {il.size(), il.begin()->size(), il.begin()->begin()->size()};
+    m_size = calculate_size();
+    m_data = new double[m_size];
+
+    size_t i = 0;
+    for(auto row : il)
+    {
+        size_t j = 0;
+        if(row.size() != il.begin()->size()){
+            throw std::runtime_error("init list rows must be of the same length!");
+        }
+        for(auto col : row)
+        {
+            size_t k = 0;
+            for(auto depth : col)
+            {
+                m_data[(i * il.begin()->size() *  il.begin()->begin()->size()) + k] = depth;
+                k++;
+            }
+            j++;
+        }
+        i++;
+    }
+}
+
 
 void tensor::of_value(double val)
 {
@@ -147,22 +170,70 @@ void tensor::random(double min, double max)
 }
 
 double* tensor::data() const {return m_data;}
-size_t tensor::size() const {return m_size;}  
-size_t tensor::rows() const {return m_rows;}  
-size_t tensor::columns() const {return m_columns;}  
+size_t tensor::size() const {return m_size;}
+tensor_shape tensor::shape() const {return m_shape;};
 
-void tensor::print()
+
+void tensor::print(std::ostream& os)
 {
-    for(size_t i=0;i<m_rows;i++)
+    
+    size_t offset = 0;
+
+    print_shape(os);
+
+    std::function<void(int)> print_tensor = [&, this](int idx)
     {
-        size_t offset = i * m_columns;
-        for(size_t j=0; j<m_columns;j++)
+        os << '[';
+        for(size_t i=0; i < m_shape[idx]; i++)
         {
-            std::cout << m_data[offset + j] << " ";
+            if(idx == (int) m_shape.size()-1)
+            {
+                os << m_data[offset];
+                offset++;
+                
+            }
+            else
+            {
+                print_tensor(idx + 1);
+            }
+
+            if(i < m_shape[idx] -1)
+            {
+                os << ",";
+            }
         }
-        //std::cout << std::endl;
+
+        os << ']';
+    };
+    
+    print_tensor(0);
+    os << std::endl;
+}
+
+void tensor::print_shape(std::ostream& os)
+{
+    os << '(';
+    for(size_t i =0; i < m_shape.size(); i++)
+    {
+        os << m_shape[i];
+        if(i != m_shape.size() -1)
+        {
+            os << ",";
+        }
     }
-    std::cout << std::endl;
+    os << ')';
+}
+
+
+size_t tensor::calculate_size()
+{
+    size_t size = 0;
+    for(const auto& x : m_shape)
+    {
+        if(size == 0){size = 1;}
+        size *= x;
+    }
+    return size;
 }
 
 //operators
@@ -175,200 +246,199 @@ tensor& tensor::operator=(const tensor& rhs)
         delete[] m_data;
     }
 
-    m_rows = rhs.m_rows;
-    m_columns = rhs.m_columns;
+    m_shape = rhs.m_shape;
     m_size = rhs.m_size;
     m_data = new double[m_size];
     std::memcpy(m_data, rhs.m_data, m_size * sizeof(double));
     return *this;
 }
 
-//adding
-tensor tensor::operator+(const tensor& rhs)
-{
-    if(m_size != rhs.m_size)
-    {
-        throw std::runtime_error("add: tensor shapes not the same " + std::to_string(m_size) + " " +  std::to_string(rhs.m_size));
-    }
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
-    double* rhs_data = rhs.data();
+// //adding
+// tensor tensor::operator+(const tensor& rhs)
+// {
+//     if(m_size != rhs.m_size)
+//     {
+//         throw std::runtime_error("add: tensor shapes not the same " + std::to_string(m_size) + " " +  std::to_string(rhs.m_size));
+//     }
+//     tensor out(m_rows, m_columns);
+//     double* out_data = out.data();
+//     double* rhs_data = rhs.data();
 
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = this->m_data[i] + rhs_data[i];
-    }
-    return out;
-}
+//     for(size_t i=0; i < m_size; i++)
+//     {
+//         out_data[i] = this->m_data[i] + rhs_data[i];
+//     }
+//     return out;
+// }
 
-tensor operator+(double lhs,const tensor& rhs)
-{
-    tensor out(rhs.rows(), rhs.columns());
-    double* out_data = out.data();
-    double* rhs_data = rhs.data();
-    for(size_t i=0; i < rhs.size(); i++)
-    {
-        out_data[i] = lhs + rhs_data[i];
-    }
-    return out;
-}
+// tensor operator+(double lhs,const tensor& rhs)
+// {
+//     tensor out(rhs.rows(), rhs.columns());
+//     double* out_data = out.data();
+//     double* rhs_data = rhs.data();
+//     for(size_t i=0; i < rhs.size(); i++)
+//     {
+//         out_data[i] = lhs + rhs_data[i];
+//     }
+//     return out;
+// }
 
-tensor operator+(const tensor& lhs, double rhs)
-{
-    return rhs + lhs;
-}
+// tensor operator+(const tensor& lhs, double rhs)
+// {
+//     return rhs + lhs;
+// }
 
-//subbing
-tensor tensor::operator-(const tensor& rhs)
-{
-    if(m_size != rhs.m_size)
-    {
-        throw std::runtime_error("sub: tensor shapes not the same");
-    }
+// //subbing
+// tensor tensor::operator-(const tensor& rhs)
+// {
+//     if(m_size != rhs.m_size)
+//     {
+//         throw std::runtime_error("sub: tensor shapes not the same");
+//     }
 
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
-    double* rhs_data = rhs.data();
+//     tensor out(m_rows, m_columns);
+//     double* out_data = out.data();
+//     double* rhs_data = rhs.data();
 
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = this->m_data[i] - rhs_data[i];
-    }
-    return out;
-}
+//     for(size_t i=0; i < m_size; i++)
+//     {
+//         out_data[i] = this->m_data[i] - rhs_data[i];
+//     }
+//     return out;
+// }
 
-tensor operator-(double lhs, const tensor& rhs)
-{
-    tensor out(rhs.rows(), rhs.columns());
-    double* out_data = out.data();
-    double* rhs_data = rhs.data();
-    for(size_t i=0; i < rhs.size(); i++)
-    {
-        out_data[i] = lhs - rhs_data[i];
-    }
-    return out;
-}
+// tensor operator-(double lhs, const tensor& rhs)
+// {
+//     tensor out(rhs.rows(), rhs.columns());
+//     double* out_data = out.data();
+//     double* rhs_data = rhs.data();
+//     for(size_t i=0; i < rhs.size(); i++)
+//     {
+//         out_data[i] = lhs - rhs_data[i];
+//     }
+//     return out;
+// }
 
-tensor operator-(const tensor& lhs, double rhs)
-{
-    tensor out(lhs.rows(), lhs.columns());
-    double* out_data = out.data();
-    double* rhs_data = lhs.data();
-    for(size_t i=0; i < lhs.size(); i++)
-    {
-        out_data[i] = rhs_data[i] - rhs;
-    }
-    return out;
-}
+// tensor operator-(const tensor& lhs, double rhs)
+// {
+//     tensor out(lhs.rows(), lhs.columns());
+//     double* out_data = out.data();
+//     double* rhs_data = lhs.data();
+//     for(size_t i=0; i < lhs.size(); i++)
+//     {
+//         out_data[i] = rhs_data[i] - rhs;
+//     }
+//     return out;
+// }
 
-tensor tensor::operator-()
-{
-    return *this * -1;
-}
+// tensor tensor::operator-()
+// {
+//     return *this * -1;
+// }
 
-//multiplying
-tensor tensor::operator*(const tensor& rhs)
-{
-    if(m_size != rhs.m_size)
-    {
-        throw std::runtime_error("mul: tensor shapes not the same: got " + std::to_string(m_size) + " and " + std::to_string(rhs.m_size) );
-    }
+// //multiplying
+// tensor tensor::operator*(const tensor& rhs)
+// {
+//     if(m_size != rhs.m_size)
+//     {
+//         throw std::runtime_error("mul: tensor shapes not the same: got " + std::to_string(m_size) + " and " + std::to_string(rhs.m_size) );
+//     }
 
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
-    double* rhs_data = rhs.data();
+//     tensor out(m_rows, m_columns);
+//     double* out_data = out.data();
+//     double* rhs_data = rhs.data();
 
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = this->m_data[i] * rhs_data[i];
-    }
-    return out;
-}
+//     for(size_t i=0; i < m_size; i++)
+//     {
+//         out_data[i] = this->m_data[i] * rhs_data[i];
+//     }
+//     return out;
+// }
 
-tensor tensor::operator*(double rhs)
-{
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
+// tensor tensor::operator*(double rhs)
+// {
+//     tensor out(m_rows, m_columns);
+//     double* out_data = out.data();
 
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = this->m_data[i] * rhs;
-    }
-    return out;
-}
+//     for(size_t i=0; i < m_size; i++)
+//     {
+//         out_data[i] = this->m_data[i] * rhs;
+//     }
+//     return out;
+// }
 
-tensor operator*(double lhs, tensor& rhs)
-{
-    return rhs * lhs;
-}
+// tensor operator*(double lhs, tensor& rhs)
+// {
+//     return rhs * lhs;
+// }
 
-//dividing
-tensor tensor::operator/(const tensor& rhs)
-{
-    if(m_size != rhs.m_size)
-    {
-        std::cout << m_size << " " << rhs.m_size << std::endl;
-        throw std::runtime_error("tensor shapes not the same");
-    }
+// //dividing
+// tensor tensor::operator/(const tensor& rhs)
+// {
+//     if(m_size != rhs.m_size)
+//     {
+//         std::cout << m_size << " " << rhs.m_size << std::endl;
+//         throw std::runtime_error("tensor shapes not the same");
+//     }
 
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
-    double* rhs_data = rhs.data();
+//     tensor out(m_rows, m_columns);
+//     double* out_data = out.data();
+//     double* rhs_data = rhs.data();
 
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = this->m_data[i] / rhs_data[i];
-    }
-    return out;
-}
+//     for(size_t i=0; i < m_size; i++)
+//     {
+//         out_data[i] = this->m_data[i] / rhs_data[i];
+//     }
+//     return out;
+// }
 
-tensor tensor::operator/(double rhs)
-{
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
+// tensor tensor::operator/(double rhs)
+// {
+//     tensor out(m_rows, m_columns);
+//     double* out_data = out.data();
 
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = this->m_data[i] / rhs;
-    }
-    return out;
-}
+//     for(size_t i=0; i < m_size; i++)
+//     {
+//         out_data[i] = this->m_data[i] / rhs;
+//     }
+//     return out;
+// }
 
-tensor operator/(double lhs, const tensor& rhs)
-{
-    tensor out(rhs.rows(), rhs.columns());
-    double* out_data = out.data();
-    double* rhs_data = rhs.data();
+// tensor operator/(double lhs, const tensor& rhs)
+// {
+//     tensor out(rhs.rows(), rhs.columns());
+//     double* out_data = out.data();
+//     double* rhs_data = rhs.data();
 
-    for(size_t i=0; i < rhs.size(); i++)
-    {
-        out_data[i] = lhs / rhs_data[i];
-    }
-    return out;
-}
+//     for(size_t i=0; i < rhs.size(); i++)
+//     {
+//         out_data[i] = lhs / rhs_data[i];
+//     }
+//     return out;
+// }
 
-//greater than
-tensor tensor::operator>(double val)
-{
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = this->m_data[i] > val;
-    }
-    return out;
-}
-//less than
-tensor tensor::operator<(double val)
-{
-    tensor out(m_rows, m_columns);
-    double* out_data = out.data();
-    for(size_t i=0; i < m_size; i++)
-    {
-        out_data[i] = this->m_data[i] < val;
-    }
-    return out;
-}
+// //greater than
+// tensor tensor::operator>(double val)
+// {
+//     tensor out(m_rows, m_columns);
+//     double* out_data = out.data();
+//     for(size_t i=0; i < m_size; i++)
+//     {
+//         out_data[i] = this->m_data[i] > val;
+//     }
+//     return out;
+// }
+// //less than
+// tensor tensor::operator<(double val)
+// {
+//     tensor out(m_rows, m_columns);
+//     double* out_data = out.data();
+//     for(size_t i=0; i < m_size; i++)
+//     {
+//         out_data[i] = this->m_data[i] < val;
+//     }
+//     return out;
+// }
 
 }//namespace czy
 
