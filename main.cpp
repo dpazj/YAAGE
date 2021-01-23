@@ -81,14 +81,23 @@ using namespace czy;
 
 void tensor_test()
 {
-    tensor y = {1, 2, 3, 4, 5};
-    y.print(std::cout);
+    tensor<int> y = {1, 2, 3, 4, 5};
+    std::cout << y << std::endl;
 
-    tensor z = {{1,2,3}, {4,5,6}, {7,8,9}, {10,11,12}, {13,14,15}};
-    z.print(std::cout);
+    tensor<float> z = {{1,2,3}, {4,5,6}, {7,8,9}, {10,11,12}, {13,14,15}};
+    std::cout << z << std::endl;
 
-    tensor x = { {{1,2}}, {{1,2}}, {{1,2}}, {{1,2}}, {{1,2}}   }; 
-    x.print(std::cout);
+    tensor<double> x = { {{1,2},{3,4},{5,6},{7,8}}, {{5,6},{7,8},{5,6},{7,8}}, {{9,10},{11,12},{5,6},{7,8}} }; 
+    std::cout << x << std::endl;
+
+
+    std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    std::vector<char> w_buf(w_data.size() * sizeof(double));
+    std::memcpy(w_buf.data(), w_data.data(), w_data.size() * sizeof(double));
+
+    tensor<double> w(w_buf, {2,4,2,1});
+    std::cout << w << std::endl;
+
     
 }
 

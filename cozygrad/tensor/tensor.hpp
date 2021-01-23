@@ -15,15 +15,23 @@ typedef std::vector<size_t> tensor_shape;
 
 namespace czy{
 
+
+template <typename T>
 class tensor
 {
     public:
         tensor();
         tensor(const tensor& x);
         tensor(tensor_shape& shape);
-        tensor(std::initializer_list<double> il);
-        tensor(std::initializer_list<std::initializer_list<double>> il);
-        tensor(std::initializer_list<std::initializer_list<std::initializer_list<double>>> il);
+
+        tensor(std::vector<char>& buf, std::initializer_list<size_t> shape);
+        //tensor(std::vector<double> buf, std::initializer_list<size_t> shape);
+
+        tensor(std::initializer_list<T> il);
+        tensor(std::initializer_list<std::initializer_list<T>> il);
+        tensor(std::initializer_list<std::initializer_list<std::initializer_list<T>>> il);
+        tensor(std::initializer_list<std::initializer_list<std::initializer_list<std::initializer_list<T>>>> il);
+
         ~tensor();
 
         void of_value(double val);
@@ -31,18 +39,21 @@ class tensor
         void ones();
         void random(double min = -1, double max = 1);
 
-        double* data() const;
+        T* data() const;
         size_t size() const;
-        void print(std::ostream& os);
-        void print_shape(std::ostream& os);
+        void print(std::ostream& os) const;
+        void print_shape(std::ostream& os) const;
 
         tensor_shape shape() const;
         
 
 
         //operators
-        double& operator[](size_t i);
-        tensor& operator=(const tensor& rhs);
+        template <typename TT>
+        friend std::ostream& operator<<(std::ostream& os, const tensor<TT>& ten);
+
+        T& operator[](size_t i);
+        tensor<T>& operator=(const tensor<T>& rhs);
 
         // tensor operator+(const tensor& rhs);
 
@@ -61,13 +72,14 @@ class tensor
     private:
 
         size_t calculate_size();
-        double* m_data = nullptr;
+        T* m_data = nullptr;
         size_t m_size = 0;
         std::vector<size_t> m_shape;
 
 };
 
-tensor::~tensor()
+template <typename T>
+tensor<T>::~tensor()
 {
     if(m_data != nullptr)
     {
@@ -75,22 +87,47 @@ tensor::~tensor()
     }
 }
 
-tensor::tensor() : m_shape()
+template <typename T>
+tensor<T>::tensor() : m_shape()
 {
 
 }
 
-tensor::tensor(const tensor& x)
+template <typename T>
+tensor<T>::tensor(const tensor<T>& x)
 {
     *this = x;
 }
 
+template <typename T>
+tensor<T>::tensor(tensor_shape& shape)
+{
+    m_shape = shape;
+    m_size = calculate_size();
+    m_data = new T[m_size];
+}
 
-tensor::tensor(std::initializer_list<double> il)
+template <typename T>
+tensor<T>::tensor(std::vector<char>& buf, std::initializer_list<size_t> shape)
+{
+    m_shape = shape;
+    m_size = calculate_size();
+    m_data = new T[m_size];
+
+    if(buf.size() != m_size * sizeof(T))
+    {
+        throw std::runtime_error("Buffer size does not match size given by shape!");
+    }
+
+    std::memcpy(m_data, buf.data(),buf.size());
+}
+
+template <typename T>
+tensor<T>::tensor(std::initializer_list<T> il)
 {
     m_shape = {il.size()};
     m_size = calculate_size();
-    m_data = new double[m_size];
+    m_data = new T[m_size];
 
     size_t i = 0;
     for(auto x : il)
@@ -100,11 +137,12 @@ tensor::tensor(std::initializer_list<double> il)
     }
 }
 
-tensor::tensor(std::initializer_list<std::initializer_list<double>> il)
+template <typename T>
+tensor<T>::tensor(std::initializer_list<std::initializer_list<T>> il)
 {
     m_shape = {il.size(), il.begin()->size()};
     m_size = calculate_size();
-    m_data = new double[m_size];
+    m_data = new T[m_size];
 
     size_t i = 0;
     for(auto row : il)
@@ -122,25 +160,29 @@ tensor::tensor(std::initializer_list<std::initializer_list<double>> il)
     }
 }
 
-tensor::tensor(std::initializer_list<std::initializer_list<std::initializer_list<double>>> il)
+template <typename T>
+tensor<T>::tensor(std::initializer_list<std::initializer_list<std::initializer_list<T>>> il)
 {
     m_shape = {il.size(), il.begin()->size(), il.begin()->begin()->size()};
     m_size = calculate_size();
-    m_data = new double[m_size];
+    m_data = new T[m_size];
 
     size_t i = 0;
     for(auto row : il)
     {
+        size_t dim_1_offset = i * il.begin()->size() * il.begin()->begin()->size();
         size_t j = 0;
         if(row.size() != il.begin()->size()){
             throw std::runtime_error("init list rows must be of the same length!");
         }
+
         for(auto col : row)
         {
+            size_t dim_2_offset = j * il.begin()->begin()->size();
             size_t k = 0;
             for(auto depth : col)
             {
-                m_data[(i * il.begin()->size() *  il.begin()->begin()->size()) + k] = depth;
+                m_data[ dim_1_offset + dim_2_offset + k] = depth;
                 k++;
             }
             j++;
@@ -149,8 +191,43 @@ tensor::tensor(std::initializer_list<std::initializer_list<std::initializer_list
     }
 }
 
+template <typename T>
+tensor<T>::tensor(std::initializer_list<std::initializer_list<std::initializer_list<std::initializer_list<T>>>> il)
+{
+    m_shape = {il.size(), il.begin()->size(), il.begin()->begin()->size(), il.begin()->begin()->begin()->size()};
+    m_size = calculate_size();
+    m_data = new T[m_size];
 
-void tensor::of_value(double val)
+    size_t i = 0;
+    for(auto row : il)
+    {
+        size_t dim_1_offset = i * il.begin()->size() * il.begin()->begin()->size() * il.begin()->begin()->begin()->size();
+        size_t j = 0;
+        if(row.size() != il.begin()->size()){
+            throw std::runtime_error("init list rows must be of the same length!");
+        }
+        for(auto col : row)
+        {
+            size_t dim_2_offset = j * il.begin()->begin()->size() * il.begin()->begin()->begin()->size();
+            size_t k = 0;
+            for(auto depth : col)
+            {
+                size_t l = 0;
+                size_t dim_3_offset = k * il.begin()->begin()->begin()->size();
+                for(auto time : depth)
+                {
+                    m_data[dim_1_offset + dim_2_offset + dim_3_offset + l] = time;
+                }
+                k++;
+            }
+            j++;
+        }
+        i++;
+    }
+}
+
+template <typename T>
+void tensor<T>::of_value(double val)
 {
     for(size_t i=0; i< m_size; i++)
     {
@@ -158,10 +235,14 @@ void tensor::of_value(double val)
     }
 }
 
-void tensor::zeros(){of_value(0.0f);}
-void tensor::ones(){of_value(1.0f);}
+template <typename T>
+void tensor<T>::zeros(){of_value(0.0f);}
 
-void tensor::random(double min, double max)
+template <typename T>
+void tensor<T>::ones(){of_value(1.0f);}
+
+template <typename T>
+void tensor<T>::random(double min, double max)
 {
     for(size_t i=0; i< m_size; i++)
     {
@@ -169,17 +250,17 @@ void tensor::random(double min, double max)
     }
 }
 
-double* tensor::data() const {return m_data;}
-size_t tensor::size() const {return m_size;}
-tensor_shape tensor::shape() const {return m_shape;};
+template <typename T>
+T* tensor<T>::data() const {return m_data;}
+template <typename T>
+size_t tensor<T>::size() const {return m_size;}
+template <typename T>
+tensor_shape tensor<T>::shape() const {return m_shape;};
 
-
-void tensor::print(std::ostream& os)
+template <typename T>
+void tensor<T>::print(std::ostream& os) const
 {
-    
     size_t offset = 0;
-
-    print_shape(os);
 
     std::function<void(int)> print_tensor = [&, this](int idx)
     {
@@ -199,7 +280,7 @@ void tensor::print(std::ostream& os)
 
             if(i < m_shape[idx] -1)
             {
-                os << ",";
+                os << ", ";
             }
         }
 
@@ -207,10 +288,10 @@ void tensor::print(std::ostream& os)
     };
     
     print_tensor(0);
-    os << std::endl;
 }
 
-void tensor::print_shape(std::ostream& os)
+template <typename T>
+void tensor<T>::print_shape(std::ostream& os) const
 {
     os << '(';
     for(size_t i =0; i < m_shape.size(); i++)
@@ -224,8 +305,8 @@ void tensor::print_shape(std::ostream& os)
     os << ')';
 }
 
-
-size_t tensor::calculate_size()
+template <typename T>
+size_t tensor<T>::calculate_size()
 {
     size_t size = 0;
     for(const auto& x : m_shape)
@@ -237,9 +318,22 @@ size_t tensor::calculate_size()
 }
 
 //operators
-double& tensor::operator[](size_t i){return m_data[i];};
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const tensor<T>& ten)
+{
+    os << "tensor(";
+    ten.print(os);
+    os << ", shape=";
+    ten.print_shape(os);
+    os << ")";
+    return os;
+}
 
-tensor& tensor::operator=(const tensor& rhs)
+template <typename T>
+T& tensor<T>::operator[](size_t i){return m_data[i];};
+
+template <typename T>
+tensor<T>& tensor<T>::operator=(const tensor<T>& rhs)
 {
     if(m_data != nullptr)
     {
@@ -248,8 +342,8 @@ tensor& tensor::operator=(const tensor& rhs)
 
     m_shape = rhs.m_shape;
     m_size = rhs.m_size;
-    m_data = new double[m_size];
-    std::memcpy(m_data, rhs.m_data, m_size * sizeof(double));
+    m_data = new T[m_size];
+    std::memcpy(m_data, rhs.m_data, m_size * sizeof(T));
     return *this;
 }
 
