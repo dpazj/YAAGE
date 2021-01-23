@@ -90,14 +90,17 @@ void tensor_test()
     tensor<double> x = { {{1,2},{3,4},{5,6},{7,8}}, {{5,6},{7,8},{5,6},{7,8}}, {{9,10},{11,12},{5,6},{7,8}} }; 
     std::cout << x << std::endl;
 
-
     std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     std::vector<char> w_buf(w_data.size() * sizeof(double));
     std::memcpy(w_buf.data(), w_data.data(), w_data.size() * sizeof(double));
 
-    tensor<double> w(w_buf, {2,4,2,1});
+    tensor<double> w(w_buf, {16});
     std::cout << w << std::endl;
-
+    w.reshape({8,2});
+    std::cout << w << std::endl;
+    w.reshape({4,2,1,2});
+    std::cout << w << std::endl;
+    w.reshape({10,6});
     
 }
 

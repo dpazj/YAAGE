@@ -34,10 +34,12 @@ class tensor
 
         ~tensor();
 
-        void of_value(double val);
+        void reshape(std::initializer_list<size_t> new_shape);
+
+        void of_value(T val);
         void zeros();
         void ones();
-        void random(double min = -1, double max = 1);
+        void random(T min = -1, T max = 1);
 
         T* data() const;
         size_t size() const;
@@ -70,7 +72,6 @@ class tensor
         // tensor operator<(double val);
 
     private:
-
         size_t calculate_size();
         T* m_data = nullptr;
         size_t m_size = 0;
@@ -227,7 +228,24 @@ tensor<T>::tensor(std::initializer_list<std::initializer_list<std::initializer_l
 }
 
 template <typename T>
-void tensor<T>::of_value(double val)
+void tensor<T>::reshape(std::initializer_list<size_t> new_shape)
+{
+    tensor_shape old = m_shape;
+    size_t old_size = m_size;
+
+    m_shape = new_shape;
+    m_size = calculate_size();
+
+    if(m_size != old_size)
+    {
+        m_shape = old;
+        m_size = calculate_size();
+        throw std::runtime_error("New shape not valid!");
+    }
+}
+
+template <typename T>
+void tensor<T>::of_value(T val)
 {
     for(size_t i=0; i< m_size; i++)
     {
@@ -242,7 +260,7 @@ template <typename T>
 void tensor<T>::ones(){of_value(1.0f);}
 
 template <typename T>
-void tensor<T>::random(double min, double max)
+void tensor<T>::random(T min, T max)
 {
     for(size_t i=0; i< m_size; i++)
     {
