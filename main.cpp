@@ -81,14 +81,14 @@ using namespace czy;
 
 void tensor_test()
 {
-    tensor<int> y = {1, 2, 3, 4, 5};
-    std::cout << y << std::endl;
+    // tensor<int> y = {1, 2, 3, 4, 5};
+    // std::cout << y << std::endl;
 
-    tensor<float> z = {{1,2,3}, {4,5,6}, {7,8,9}, {10,11,12}, {13,14,15}};
-    std::cout << z << std::endl;
+    // tensor<float> z = {{1,2,3}, {4,5,6}, {7,8,9}, {10,11,12}, {13,14,15}};
+    // std::cout << z << std::endl;
 
-    tensor<double> x = { {{1,2},{3,4},{5,6},{7,8}}, {{5,6},{7,8},{5,6},{7,8}}, {{9,10},{11,12},{5,6},{7,8}} }; 
-    std::cout << x << std::endl;
+    // tensor<double> x = { {{1,2},{3,4},{5,6},{7,8}}, {{5,6},{7,8},{5,6},{7,8}}, {{9,10},{11,12},{5,6},{7,8}} }; 
+    // std::cout << x << std::endl;
 
     std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     std::vector<char> w_buf(w_data.size() * sizeof(double));
@@ -96,11 +96,12 @@ void tensor_test()
 
     tensor<double> w(w_buf, {16});
     std::cout << w << std::endl;
-    w.reshape({8,2});
-    std::cout << w << std::endl;
     w.reshape({4,2,1,2});
+    auto t = w.slice(1,4);
     std::cout << w << std::endl;
-    w.reshape({10,6});
+    std::cout << t << std::endl;
+
+
     
 }
 

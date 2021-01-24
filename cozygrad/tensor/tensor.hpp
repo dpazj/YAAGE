@@ -24,7 +24,8 @@ class tensor
         tensor(const tensor& x);
         tensor(tensor_shape& shape);
 
-        tensor(std::vector<char>& buf, std::initializer_list<size_t> shape);
+        tensor(std::vector<char>& buf, std::initializer_list<size_t> shape) : tensor(buf, tensor_shape(shape)){};
+        tensor(std::vector<char>& buf, tensor_shape shape);
         //tensor(std::vector<double> buf, std::initializer_list<size_t> shape);
 
         tensor(std::initializer_list<T> il);
@@ -35,6 +36,7 @@ class tensor
         ~tensor();
 
         void reshape(std::initializer_list<size_t> new_shape);
+        tensor<T> slice(int start, int end=-1);
 
         void of_value(T val);
         void zeros();
@@ -108,8 +110,23 @@ tensor<T>::tensor(tensor_shape& shape)
     m_data = new T[m_size];
 }
 
+// template <typename T>
+// tensor<T>::tensor(std::vector<char>& buf, std::initializer_list<size_t> shape)
+// {
+//     m_shape = shape;
+//     m_size = calculate_size();
+//     m_data = new T[m_size];
+
+//     if(buf.size() != m_size * sizeof(T))
+//     {
+//         throw std::runtime_error("Buffer size does not match size given by shape!");
+//     }
+
+//     std::memcpy(m_data, buf.data(),buf.size());
+// }
+
 template <typename T>
-tensor<T>::tensor(std::vector<char>& buf, std::initializer_list<size_t> shape)
+tensor<T>::tensor(std::vector<char>& buf, tensor_shape shape)
 {
     m_shape = shape;
     m_size = calculate_size();
@@ -242,6 +259,34 @@ void tensor<T>::reshape(std::initializer_list<size_t> new_shape)
         m_size = calculate_size();
         throw std::runtime_error("New shape not valid!");
     }
+}
+
+//maybe change this to a view of the data instead so that we dont need to copy data?
+template <typename T>
+tensor<T> tensor<T>::slice(int start, int end)
+{
+
+    size_t start_idx = start;
+    size_t end_idx = end; 
+    if(end == -1){ end_idx = m_shape.front();}
+
+    if(start_idx > m_shape.front() || end_idx > m_shape.front()){throw std::runtime_error("Slice index out of range!");}
+    if(start_idx == end_idx){throw std::runtime_error("Slice start index cannot equal slice end index!");}
+    if(start_idx > end_idx){throw std::runtime_error("Slice start index cannot be greater than slice end index!");}
+
+
+
+    tensor_shape new_shape = m_shape;
+    new_shape[0] = end_idx - start_idx;
+
+    size_t offset = (m_size / m_shape[0]) * start_idx;
+    std::cout << offset << std::endl;
+
+    tensor<T> tensor_slice(new_shape);
+    std::memcpy(tensor_slice.m_data, m_data + offset, tensor_slice.m_size * sizeof(T));
+
+
+    return tensor_slice;
 }
 
 template <typename T>
