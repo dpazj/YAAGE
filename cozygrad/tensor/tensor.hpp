@@ -57,13 +57,13 @@ class tensor
         T& operator[](size_t i);
         tensor<T>& operator=(const tensor<T>& rhs);
 
-        tensor operator+(const tensor& rhs);
+        tensor<T> operator+(const tensor<T>& rhs);
         tensor operator+(T rhs);
 
         // tensor operator-(const tensor& rhs);
         // tensor operator-();
 
-        // tensor operator*(const tensor& rhs);
+        tensor<T> operator*(const tensor<T>& rhs);
         // tensor operator*(const double rhs);
 
         // tensor operator/(const tensor& rhs);
@@ -419,19 +419,62 @@ tensor<T> tensor<T>::operator+(const tensor<T>& rhs)
     }
 
     tensor<T> out(out_shape);
-    out.zeros();
-
+    
     for(size_t i=0; i < out.size(); i++)
     {
-
-
-
-        size_t idx_a = i;
-        size_t idx_b = i / ;
+        //1 3
+        size_t idx_a = i % m_size;
+        size_t idx_b = i % rhs.m_size;
         
+        std::cout << idx_a << " " << idx_b << std::endl;
+
         T a = m_data[idx_a];
         T b = rhs.m_data[idx_b];
         out[i] = a + b;
+    }
+
+    return out;
+}
+
+template <typename T>
+tensor<T> tensor<T>::operator*(const tensor<T>& rhs)
+{
+    //broadcasting - should refactor 
+    tensor_shape x_shape = m_shape;
+    tensor_shape y_shape = rhs.m_shape;
+    tensor_shape out_shape;
+    size_t n_dims = std::max(x_shape.size(), y_shape.size());
+
+    auto prepend_ones = [](tensor_shape& x, size_t dims){
+        while(x.size() < dims){x.insert(x.begin(), 1);}
+        return x;
+    };
+
+    x_shape = prepend_ones(x_shape, n_dims);
+    y_shape = prepend_ones(y_shape, n_dims);
+
+    for(size_t i=0; i < n_dims; i++)
+    {
+        if( x_shape[i] != 1 && y_shape[i] != 1 && (x_shape[i] != y_shape[i]) )
+        {
+            throw std::runtime_error("Unbroadcastable shapes!");
+        }
+        out_shape.push_back(std::max(x_shape[i], y_shape[i]));
+    }
+
+    tensor<T> out(out_shape);
+    
+    for(size_t i=0; i < out.size(); i++)
+    {
+        //1 3
+        size_t idx_a = i % m_size;
+        size_t idx_b = i / 2 % rhs.m_size;
+        
+        std::cout << idx_a << " " << idx_b << std::endl;
+
+        T a = m_data[idx_a];
+        T b = rhs.m_data[idx_b];
+        out[i] = a * b;
     }
 
     return out;
