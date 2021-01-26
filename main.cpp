@@ -79,31 +79,77 @@ using namespace czy;
 //     yh.gradient()->print();
 // }
 
-void tensor_test()
+
+
+void broadcasting_test1()
 {
-    // tensor<int> y = {1, 2, 3, 4, 5};
-    // std::cout << y << std::endl;
 
-    // tensor<float> z = {{1,2,3}, {4,5,6}, {7,8,9}, {10,11,12}, {13,14,15}};
-    // std::cout << z << std::endl;
+    tensor<double> a = {1, 2, 3};
+    tensor<double> b = {2, 2, 2};
+    std::cout << a + b << std::endl << std::endl;
+}
 
-    // tensor<double> x = { {{1,2},{3,4},{5,6},{7,8}}, {{5,6},{7,8},{5,6},{7,8}}, {{9,10},{11,12},{5,6},{7,8}} }; 
-    // std::cout << x << std::endl;
+void broadcasting_test2()
+{
+    tensor<double> a = {1, 2, 3};
+    tensor<double> b = {2.0};
+    std::cout << a << std::endl;
+    std::cout << b << std::endl;
+    std::cout << a + b << std::endl;
+}
 
+void broadcasting_test3()
+{
+    tensor<double> a = {{1, 2, 3}, {4,5,6}, {7,8,9}, {10,11,12}};
+    tensor<double> b = {1,0,1};
+    std::cout << a + b << std::endl;
+}
+
+void broadcasting_test4()
+{
+    tensor<double> a = {{1, 2, 3}, {4,5,6}, {7,8,9}, {10,11,12}};
+    tensor<double> b = {1};
+    std::cout << a + b << std::endl;
+}
+
+void broadcasting_test5()
+{
     std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     std::vector<char> w_buf(w_data.size() * sizeof(double));
     std::memcpy(w_buf.data(), w_data.data(), w_data.size() * sizeof(double));
+    tensor<double> a(w_buf, {16});
+    a.reshape({4,2,1,2});
+    tensor<double> b = {2,2};
+    b.reshape({1,1,1,1,1,2});
 
-    tensor<double> w(w_buf, {16});
-    std::cout << w << std::endl;
-    w.reshape({4,2,1,2});
-    auto t = w.slice(1,4);
-    std::cout << w << std::endl;
-    std::cout << t << std::endl;
+    std::cout << a + b << std::endl;
 
-
-    
 }
+
+
+void tensor_test()
+{
+
+    broadcasting_test1();
+    broadcasting_test2();
+    // broadcasting_test3();
+    // broadcasting_test4();
+    // broadcasting_test5();
+
+
+    // std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    // std::vector<char> w_buf(w_data.size() * sizeof(double));
+    // std::memcpy(w_buf.data(), w_data.data(), w_data.size() * sizeof(double));
+
+    // tensor<double> w(w_buf, {16});
+    // std::cout << w << std::endl;
+    // w.reshape({4,2,1,2});
+    // auto t = w.slice(1,4);
+    // std::cout << w << std::endl;
+    // std::cout << t << std::endl;
+
+}
+
 
 int main()
 {

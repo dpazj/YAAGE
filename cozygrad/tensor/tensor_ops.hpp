@@ -8,13 +8,17 @@
 namespace czy{
 namespace op{
 
-tensor sum(const tensor& a);
-tensor exp(const tensor& a);
-tensor log(const tensor& a);
-tensor max(const tensor& a, double y);
-tensor pow(const tensor& a, double e);
-tensor dot(const tensor& a, const tensor& b);
-tensor transpose(const tensor& a);
+
+
+
+
+// tensor sum(const tensor& a);
+// tensor exp(const tensor& a);
+// tensor log(const tensor& a);
+// tensor max(const tensor& a, double y);
+// tensor pow(const tensor& a, double e);
+// tensor dot(const tensor& a, const tensor& b);
+// tensor transpose(const tensor& a);
 
 //for now we will just sum over both axis
 //TODO sum over chosen axis;

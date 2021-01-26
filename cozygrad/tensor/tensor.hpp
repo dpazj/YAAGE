@@ -53,13 +53,12 @@ class tensor
 
 
         //operators
-        template <typename TT>
-        friend std::ostream& operator<<(std::ostream& os, const tensor<TT>& ten);
 
         T& operator[](size_t i);
         tensor<T>& operator=(const tensor<T>& rhs);
 
-        // tensor operator+(const tensor& rhs);
+        tensor operator+(const tensor& rhs);
+        tensor operator+(T rhs);
 
         // tensor operator-(const tensor& rhs);
         // tensor operator-();
@@ -72,6 +71,10 @@ class tensor
 
         // tensor operator>(double val);
         // tensor operator<(double val);
+
+        //Friends
+        template <typename TT>
+        friend std::ostream& operator<<(std::ostream& os, const tensor<TT>& ten);
 
     private:
         size_t calculate_size();
@@ -109,21 +112,6 @@ tensor<T>::tensor(tensor_shape& shape)
     m_size = calculate_size();
     m_data = new T[m_size];
 }
-
-// template <typename T>
-// tensor<T>::tensor(std::vector<char>& buf, std::initializer_list<size_t> shape)
-// {
-//     m_shape = shape;
-//     m_size = calculate_size();
-//     m_data = new T[m_size];
-
-//     if(buf.size() != m_size * sizeof(T))
-//     {
-//         throw std::runtime_error("Buffer size does not match size given by shape!");
-//     }
-
-//     std::memcpy(m_data, buf.data(),buf.size());
-// }
 
 template <typename T>
 tensor<T>::tensor(std::vector<char>& buf, tensor_shape shape)
@@ -265,7 +253,6 @@ void tensor<T>::reshape(std::initializer_list<size_t> new_shape)
 template <typename T>
 tensor<T> tensor<T>::slice(int start, int end)
 {
-
     size_t start_idx = start;
     size_t end_idx = end; 
     if(end == -1){ end_idx = m_shape.front();}
@@ -274,17 +261,13 @@ tensor<T> tensor<T>::slice(int start, int end)
     if(start_idx == end_idx){throw std::runtime_error("Slice start index cannot equal slice end index!");}
     if(start_idx > end_idx){throw std::runtime_error("Slice start index cannot be greater than slice end index!");}
 
-
-
     tensor_shape new_shape = m_shape;
     new_shape[0] = end_idx - start_idx;
 
     size_t offset = (m_size / m_shape[0]) * start_idx;
-    std::cout << offset << std::endl;
 
     tensor<T> tensor_slice(new_shape);
     std::memcpy(tensor_slice.m_data, m_data + offset, tensor_slice.m_size * sizeof(T));
-
 
     return tensor_slice;
 }
@@ -334,7 +317,6 @@ void tensor<T>::print(std::ostream& os) const
             {
                 os << m_data[offset];
                 offset++;
-                
             }
             else
             {
@@ -346,7 +328,6 @@ void tensor<T>::print(std::ostream& os) const
                 os << ", ";
             }
         }
-
         os << ']';
     };
     
@@ -410,35 +391,58 @@ tensor<T>& tensor<T>::operator=(const tensor<T>& rhs)
     return *this;
 }
 
-// //adding
-// tensor tensor::operator+(const tensor& rhs)
-// {
-//     if(m_size != rhs.m_size)
-//     {
-//         throw std::runtime_error("add: tensor shapes not the same " + std::to_string(m_size) + " " +  std::to_string(rhs.m_size));
-//     }
-//     tensor out(m_rows, m_columns);
-//     double* out_data = out.data();
-//     double* rhs_data = rhs.data();
+//adding
+template <typename T>
+tensor<T> tensor<T>::operator+(const tensor<T>& rhs)
+{
+    //broadcasting - should refactor 
+    tensor_shape x_shape = m_shape;
+    tensor_shape y_shape = rhs.m_shape;
+    tensor_shape out_shape;
+    size_t n_dims = std::max(x_shape.size(), y_shape.size());
 
-//     for(size_t i=0; i < m_size; i++)
-//     {
-//         out_data[i] = this->m_data[i] + rhs_data[i];
-//     }
-//     return out;
-// }
+    auto prepend_ones = [](tensor_shape& x, size_t dims){
+        while(x.size() < dims){x.insert(x.begin(), 1);}
+        return x;
+    };
 
-// tensor operator+(double lhs,const tensor& rhs)
-// {
-//     tensor out(rhs.rows(), rhs.columns());
-//     double* out_data = out.data();
-//     double* rhs_data = rhs.data();
-//     for(size_t i=0; i < rhs.size(); i++)
-//     {
-//         out_data[i] = lhs + rhs_data[i];
-//     }
-//     return out;
-// }
+    x_shape = prepend_ones(x_shape, n_dims);
+    y_shape = prepend_ones(y_shape, n_dims);
+
+    for(size_t i=0; i < n_dims; i++)
+    {
+        if( (x_shape[i] != 1 && y_shape[i] != 1) && (x_shape[i] != y_shape[i]) )
+        {
+            throw std::runtime_error("Unbroadcastable shapes!");
+        }
+        out_shape.push_back(std::max(x_shape[i], y_shape[i]));
+    }
+
+    tensor<T> out(out_shape);
+    out.zeros();
+
+    for(size_t i=0; i < out.size(); i++)
+    {
+
+
+
+        size_t idx_a = i;
+        size_t idx_b = i / ;
+        
+        T a = m_data[idx_a];
+        T b = rhs.m_data[idx_b];
+        out[i] = a + b;
+    }
+
+    return out;
+}
+
+template <typename T>
+tensor<T> tensor<T>::operator+(T rhs)
+{
+    tensor<T> x = {rhs};
+    return x + *this;
+}
 
 // tensor operator+(const tensor& lhs, double rhs)
 // {
