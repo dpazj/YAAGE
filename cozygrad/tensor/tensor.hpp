@@ -8,6 +8,7 @@
 #include <cstring>
 #include <random>
 #include <functional>
+#include <algorithm>
 
 
 typedef unsigned long size_t;
@@ -420,18 +421,104 @@ tensor<T> tensor<T>::operator+(const tensor<T>& rhs)
 
     tensor<T> out(out_shape);
     
-    for(size_t i=0; i < out.size(); i++)
+    if(x_shape == y_shape)
     {
-        //1 3
-        size_t idx_a = i % m_size;
-        size_t idx_b = i % rhs.m_size;
-        
-        std::cout << idx_a << " " << idx_b << std::endl;
-
-        T a = m_data[idx_a];
-        T b = rhs.m_data[idx_b];
-        out[i] = a + b;
+        for(size_t i=0; i < out.size(); i++)
+        {
+            T a = m_data[i];
+            T b = rhs.m_data[i];
+            out[i] = a + b;
+        }
     }
+    else if(out_shape.size() == 1)
+    {
+        for(size_t j=0; j<out_shape[0];j++)
+        {
+            T a = m_data[(j % x_shape[0])];
+            T b = rhs.m_data[(j % y_shape[0])];
+            out[j] = a + b;
+        } 
+    }
+    else
+    {
+
+        std::vector<size_t> dim_offsets;
+        std::vector<size_t> xdim_offsets;
+        std::vector<size_t> ydim_offsets;
+        size_t acc = 1;
+        size_t accx = 1;
+        size_t accy = 1;
+        for(size_t i=out_shape.size(); i > 0; i--)
+        {
+            acc *= out_shape[i-1];
+            accx *= x_shape[i-1];
+            accy *= y_shape[i-1];
+            dim_offsets.push_back(acc);
+            xdim_offsets.push_back(accx);
+            ydim_offsets.push_back(accy);
+        }
+
+        std::reverse(dim_offsets.begin(), dim_offsets.end());
+        std::reverse(xdim_offsets.begin(), xdim_offsets.end());
+        std::reverse(ydim_offsets.begin(), ydim_offsets.end());
+
+        std::function<void(std::vector<size_t>&)> print_offset = [&](std::vector<size_t>& a)
+        {
+            for(const auto& x : a)
+            {
+                std::cout << x << " ";
+            }
+            std::cout << std::endl;
+        };
+
+        std::cout << "OFFSETS:" << std::endl;
+        print_offset(dim_offsets);
+        print_offset(xdim_offsets);
+        print_offset(ydim_offsets);
+        std::cout << std::endl;
+        
+
+        size_t x_idx = 0; 
+        size_t y_idx = 0;
+        size_t o_idx = 0;
+        std::function<void(int)> f = [&](size_t dim){
+
+            
+            for(size_t i=0;i<out_shape[dim];i++)
+            {           
+                //std::cout << x_idx << " " << y_idx << " " << o_idx <<  std::endl;     
+                if(dim == out_shape.size() - 2)
+                {
+                    for(size_t j=0; j<out_shape[dim+1];j++)
+                    {
+                        T a = m_data[x_idx + (j % x_shape[dim + 1])];
+                        T b = rhs.m_data[y_idx + (j % y_shape[dim + 1])];
+                        out[o_idx + j] = a + b;
+
+                        std::cout << x_idx + (j % x_shape[dim + 1]) << " " << y_idx + (j % y_shape[dim + 1]) << " " << o_idx + j <<  std::endl;
+
+
+
+                    }
+                }
+                else
+                {
+                    f(dim + 1);   
+                }
+                // std::cout << "info: " << out_shape[dim] << " " << out_shape[dim+1] << " " << x_shape[dim] << " " << y_shape[dim] << " " << dim_offsets[dim]<< std::endl;
+                // x_idx += out_shape[dim+1] / 2 % x_shape[dim]; y_idx += out_shape[dim+1] % y_shape[dim]; o_idx += out_shape[dim+1];
+
+                //std::cout << "info: " << xdim_offsets[dim+1] << " " << ydim_offsets[dim+1] << " " << dim_offsets[dim+1] << " " << (out_shape[dim] == y_shape[dim]) << " " <<  (out_shape[dim] == x_shape[dim]) << std::endl;
+                
+                x_idx += xdim_offsets[dim+1] * !(1 == x_shape[dim]); 
+                y_idx += ydim_offsets[dim+1] * !(1 == y_shape[dim]); 
+                o_idx += dim_offsets[dim+1] * !(1 == out_shape[dim]); 
+            }
+        };
+
+        f(0);
+    }
+    
 
     return out;
 }
@@ -463,19 +550,41 @@ tensor<T> tensor<T>::operator*(const tensor<T>& rhs)
     }
 
     tensor<T> out(out_shape);
-    
-    for(size_t i=0; i < out.size(); i++)
-    {
-        //1 3
-        size_t idx_a = i % m_size;
-        size_t idx_b = i / 2 % rhs.m_size;
-        
-        std::cout << idx_a << " " << idx_b << std::endl;
 
-        T a = m_data[idx_a];
-        T b = rhs.m_data[idx_b];
-        out[i] = a * b;
-    }
+    // std::vector<size_t> cumulative;
+    // size_t acc = 1;
+    // for(size_t i=out_shape.size(); i > 0; i--)
+    // {
+    //     acc *= out_shape[i -1];
+    //     cumulative.push_back(acc);
+    // }
+    // cumulative.pop_back();
+    // std::cout << cumulative.size() << std::endl << std::endl;
+    
+    // for(size_t i=0; i < out.size(); i++)
+    // {
+        
+    //     size_t idxa_0 = i / 1 % 1;
+    //     size_t idxb_0 = i / 1 % 2;
+
+    //     size_t idxa_1 = idxa_0 + 1 * (i / 2 % 3);
+    //     size_t idxb_1 = idxb_0 + 2 * (i / 2 % 1);
+
+    //     std::cout << "0. " << idxa_0 << " " << idxb_0 << std::endl;
+    //     std::cout << "1. " << idxa_1 << " " << idxb_1 << std::endl;
+    //     std::cout << std::endl;
+
+
+    //     size_t idx_a = idxa_1;
+    //     size_t idx_b = idxb_1;
+        
+    //     //std::cout << idx_a << " " << idx_b << std::endl;
+
+    //     T a = m_data[idx_a];
+    //     T b = rhs.m_data[idx_b];
+    //     out[i] = a * b;
+    // }
+    
 
     return out;
 }

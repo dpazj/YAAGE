@@ -134,9 +134,10 @@ void broacasting_test6()
     tensor<double> a = {12,24,36};
     tensor<double> b = {45,55};
     a.reshape({3,1});
-    std::cout << a << b << std::endl;
+    std::cout << a << std::endl << b << std::endl;
 
-    std::cout << b * a << std::endl;
+    std::cout << a + b << std::endl;
+    
 }
 
 
@@ -147,8 +148,9 @@ void tensor_test()
     // broadcasting_test2();
     // broadcasting_test3();
     // broadcasting_test4();
-    // broadcasting_test5();
-    broacasting_test6();
+    broadcasting_test5();
+    
+    //broacasting_test6();
 
     // std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     // std::vector<char> w_buf(w_data.size() * sizeof(double));
