@@ -39,6 +39,8 @@ class tensor
         void reshape(std::initializer_list<size_t> new_shape);
         tensor<T> slice(int start, int end=-1);
 
+
+        tensor<T> map(std::function<T(T)> operation);
         void of_value(T val);
         void zeros();
         void ones();
@@ -51,27 +53,23 @@ class tensor
 
         tensor_shape shape() const;
         
-
-
         //operators
-
         T& operator[](size_t i);
         tensor<T>& operator=(const tensor<T>& rhs);
 
         tensor<T> operator+(const tensor<T>& rhs);
         tensor operator+(T rhs);
 
-        // tensor operator-(const tensor& rhs);
-        // tensor operator-();
+        tensor operator-(const tensor& rhs);
+        tensor operator-(T rhs);
 
         tensor<T> operator*(const tensor<T>& rhs);
-        // tensor operator*(const double rhs);
+        tensor<T> operator*(const T rhs);
 
-        // tensor operator/(const tensor& rhs);
-        // tensor operator/(const double rhs);
+        tensor operator/(const tensor& rhs);
+        tensor operator/(const T rhs);
 
-        // tensor operator>(double val);
-        // tensor operator<(double val);
+        tensor operator-();
 
         //Friends
         template <typename TT>
@@ -87,6 +85,8 @@ class tensor
         //broadcasting functions
         tensor_shape calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_shape);
         tensor<T> broadcast(const tensor<T>& other, std::function<T(T,T)> operation);
+
+        tensor<T> unary_operation(std::function<T(T)> operation);
 
         T* m_data = nullptr;
         size_t m_size = 0;
@@ -372,6 +372,17 @@ size_t tensor<T>::calculate_size()
 }
 
 template <typename T>
+tensor<T> tensor<T>::unary_operation(std::function<T(T)> operation)
+{
+    tensor<T> out(m_shape);
+    for(size_t i=0; i < out.m_size; i++)
+    {
+        out[i] = operation(m_data[i]);
+    }
+    out;
+}
+
+template <typename T>
 std::vector<size_t> tensor<T>::calculate_dimension_offsets(tensor_shape& shape)
 {
     size_t acc = 1;
@@ -431,12 +442,36 @@ tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T,T)> operati
 
     tensor<T> out(out_shape);
     
+    //see if we can do a few tricks to make the operation faster
     if(x_shape == y_shape)
     {
         for(size_t i=0; i < out.size(); i++)
         {
             T a = m_data[i];
             T b = y.m_data[i];
+            out[i] = operation(a,b);
+        }
+    }
+    else if(m_size == 1 || y.m_size == 1)
+    {
+        T* size1_data_ptr = nullptr;
+        T* other_data_ptr = nullptr;
+
+        if(m_size == 1)
+        {
+            size1_data_ptr = m_data;
+            other_data_ptr = y.m_data;
+        }
+        else
+        {
+            size1_data_ptr = y.m_data;
+            other_data_ptr = m_data;
+        }
+        
+        for(size_t i=0; i < out.size(); i++)
+        {
+            T a = size1_data_ptr[0];
+            T b = other_data_ptr[i];
             out[i] = operation(a,b);
         }
     }
@@ -521,234 +556,91 @@ tensor<T> tensor<T>::operator+(const tensor<T>& rhs)
 }
 
 template <typename T>
-tensor<T> tensor<T>::operator*(const tensor<T>& rhs)
-{
-    //broadcasting - should refactor 
-    tensor_shape x_shape = m_shape;
-    tensor_shape y_shape = rhs.m_shape;
-    tensor_shape out_shape;
-    size_t n_dims = std::max(x_shape.size(), y_shape.size());
-
-    auto prepend_ones = [](tensor_shape& x, size_t dims){
-        while(x.size() < dims){x.insert(x.begin(), 1);}
-        return x;
-    };
-
-    x_shape = prepend_ones(x_shape, n_dims);
-    y_shape = prepend_ones(y_shape, n_dims);
-
-    for(size_t i=0; i < n_dims; i++)
-    {
-        if( x_shape[i] != 1 && y_shape[i] != 1 && (x_shape[i] != y_shape[i]) )
-        {
-            throw std::runtime_error("Unbroadcastable shapes!");
-        }
-        out_shape.push_back(std::max(x_shape[i], y_shape[i]));
-    }
-
-    tensor<T> out(out_shape);
-
-    // std::vector<size_t> cumulative;
-    // size_t acc = 1;
-    // for(size_t i=out_shape.size(); i > 0; i--)
-    // {
-    //     acc *= out_shape[i -1];
-    //     cumulative.push_back(acc);
-    // }
-    // cumulative.pop_back();
-    // std::cout << cumulative.size() << std::endl << std::endl;
-    
-    // for(size_t i=0; i < out.size(); i++)
-    // {
-        
-    //     size_t idxa_0 = i / 1 % 1;
-    //     size_t idxb_0 = i / 1 % 2;
-
-    //     size_t idxa_1 = idxa_0 + 1 * (i / 2 % 3);
-    //     size_t idxb_1 = idxb_0 + 2 * (i / 2 % 1);
-
-    //     std::cout << "0. " << idxa_0 << " " << idxb_0 << std::endl;
-    //     std::cout << "1. " << idxa_1 << " " << idxb_1 << std::endl;
-    //     std::cout << std::endl;
-
-
-    //     size_t idx_a = idxa_1;
-    //     size_t idx_b = idxb_1;
-        
-    //     //std::cout << idx_a << " " << idx_b << std::endl;
-
-    //     T a = m_data[idx_a];
-    //     T b = rhs.m_data[idx_b];
-    //     out[i] = a * b;
-    // }
-    
-
-    return out;
-}
-
-template <typename T>
 tensor<T> tensor<T>::operator+(T rhs)
 {
     tensor<T> x = {rhs};
     return x + *this;
 }
 
-// tensor operator+(const tensor& lhs, double rhs)
-// {
-//     return rhs + lhs;
-// }
+template <typename T>
+tensor<T> operator+(const tensor<T>& lhs, T rhs)
+{
+    return rhs + lhs;
+}
 
-// //subbing
-// tensor tensor::operator-(const tensor& rhs)
-// {
-//     if(m_size != rhs.m_size)
-//     {
-//         throw std::runtime_error("sub: tensor shapes not the same");
-//     }
+//subbing
+template <typename T>
+tensor<T> tensor<T>::operator-(const tensor<T>& rhs)
+{
+    return broadcast(rhs, [](T a, T b){
+        return a-b;
+    });
+}
 
-//     tensor out(m_rows, m_columns);
-//     double* out_data = out.data();
-//     double* rhs_data = rhs.data();
+template <typename T>
+tensor<T> tensor<T>::operator-(T rhs)
+{
+    tensor<T> x = {rhs};
+    return x - *this;
+}
 
-//     for(size_t i=0; i < m_size; i++)
-//     {
-//         out_data[i] = this->m_data[i] - rhs_data[i];
-//     }
-//     return out;
-// }
+template <typename T>
+tensor<T> operator-(const tensor<T>& lhs, T rhs)
+{
+    return lhs - rhs;
+}
 
-// tensor operator-(double lhs, const tensor& rhs)
-// {
-//     tensor out(rhs.rows(), rhs.columns());
-//     double* out_data = out.data();
-//     double* rhs_data = rhs.data();
-//     for(size_t i=0; i < rhs.size(); i++)
-//     {
-//         out_data[i] = lhs - rhs_data[i];
-//     }
-//     return out;
-// }
+//multiplying
+template <typename T>
+tensor<T> tensor<T>::operator*(const tensor<T>& rhs)
+{
+    return broadcast(rhs, [](T a, T b){
+        return a*b;
+    });
+}
 
-// tensor operator-(const tensor& lhs, double rhs)
-// {
-//     tensor out(lhs.rows(), lhs.columns());
-//     double* out_data = out.data();
-//     double* rhs_data = lhs.data();
-//     for(size_t i=0; i < lhs.size(); i++)
-//     {
-//         out_data[i] = rhs_data[i] - rhs;
-//     }
-//     return out;
-// }
+template <typename T>
+tensor<T> tensor<T>::operator*(T rhs)
+{
+    tensor<T> x = {rhs};
+    return x * *this;
+}
 
-// tensor tensor::operator-()
-// {
-//     return *this * -1;
-// }
-
-// //multiplying
-// tensor tensor::operator*(const tensor& rhs)
-// {
-//     if(m_size != rhs.m_size)
-//     {
-//         throw std::runtime_error("mul: tensor shapes not the same: got " + std::to_string(m_size) + " and " + std::to_string(rhs.m_size) );
-//     }
-
-//     tensor out(m_rows, m_columns);
-//     double* out_data = out.data();
-//     double* rhs_data = rhs.data();
-
-//     for(size_t i=0; i < m_size; i++)
-//     {
-//         out_data[i] = this->m_data[i] * rhs_data[i];
-//     }
-//     return out;
-// }
-
-// tensor tensor::operator*(double rhs)
-// {
-//     tensor out(m_rows, m_columns);
-//     double* out_data = out.data();
-
-//     for(size_t i=0; i < m_size; i++)
-//     {
-//         out_data[i] = this->m_data[i] * rhs;
-//     }
-//     return out;
-// }
-
-// tensor operator*(double lhs, tensor& rhs)
-// {
-//     return rhs * lhs;
-// }
+template <typename T>
+tensor<T> operator*(const tensor<T>& lhs, T rhs)
+{
+    return rhs * lhs;
+}
 
 // //dividing
-// tensor tensor::operator/(const tensor& rhs)
-// {
-//     if(m_size != rhs.m_size)
-//     {
-//         std::cout << m_size << " " << rhs.m_size << std::endl;
-//         throw std::runtime_error("tensor shapes not the same");
-//     }
+template <typename T>
+tensor<T> tensor<T>::operator/(const tensor<T>& rhs)
+{
+    return broadcast(rhs, [](T a, T b){
+        return a/b;
+    });
+}
 
-//     tensor out(m_rows, m_columns);
-//     double* out_data = out.data();
-//     double* rhs_data = rhs.data();
+template <typename T>
+tensor<T> tensor<T>::operator/(T rhs)
+{
+    tensor<T> x = {rhs};
+    return x / *this;
+}
 
-//     for(size_t i=0; i < m_size; i++)
-//     {
-//         out_data[i] = this->m_data[i] / rhs_data[i];
-//     }
-//     return out;
-// }
+template <typename T>
+tensor<T> operator/(const tensor<T>& lhs, T rhs)
+{
+    return rhs / lhs;
+}
 
-// tensor tensor::operator/(double rhs)
-// {
-//     tensor out(m_rows, m_columns);
-//     double* out_data = out.data();
+//UNARY OPERATORS
+template <typename T>
+tensor<T> tensor<T>::operator-()
+{
+    return unary_operation([](T a){return -a;});
+}
 
-//     for(size_t i=0; i < m_size; i++)
-//     {
-//         out_data[i] = this->m_data[i] / rhs;
-//     }
-//     return out;
-// }
-
-// tensor operator/(double lhs, const tensor& rhs)
-// {
-//     tensor out(rhs.rows(), rhs.columns());
-//     double* out_data = out.data();
-//     double* rhs_data = rhs.data();
-
-//     for(size_t i=0; i < rhs.size(); i++)
-//     {
-//         out_data[i] = lhs / rhs_data[i];
-//     }
-//     return out;
-// }
-
-// //greater than
-// tensor tensor::operator>(double val)
-// {
-//     tensor out(m_rows, m_columns);
-//     double* out_data = out.data();
-//     for(size_t i=0; i < m_size; i++)
-//     {
-//         out_data[i] = this->m_data[i] > val;
-//     }
-//     return out;
-// }
-// //less than
-// tensor tensor::operator<(double val)
-// {
-//     tensor out(m_rows, m_columns);
-//     double* out_data = out.data();
-//     for(size_t i=0; i < m_size; i++)
-//     {
-//         out_data[i] = this->m_data[i] < val;
-//     }
-//     return out;
-// }
 
 }//namespace czy
 

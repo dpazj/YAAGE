@@ -117,10 +117,7 @@ void broadcasting_test4()
 
 void broadcasting_test5()
 {
-    std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-    std::vector<char> w_buf(w_data.size() * sizeof(double));
-    std::memcpy(w_buf.data(), w_data.data(), w_data.size() * sizeof(double));
-    tensor<double> a(w_buf, {16});
+    tensor<double> a = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     a.reshape({4,2,1,2});
     tensor<double> b = {2,2};
     b.reshape({1,1,1,1,1,2});
@@ -136,14 +133,13 @@ void broacasting_test6()
     tensor<double> b = {45,55};
     a.reshape({3,1});
     std::cout << a << std::endl << b << std::endl;
-    std::cout << a + b << std::endl;
+    std::cout << a * b << std::endl;
     
 }
 
 
 void tensor_test()
 {
-
     broadcasting_test1();
     broadcasting_test2();
     broadcasting_test3();

@@ -9,9 +9,6 @@ namespace czy{
 namespace op{
 
 
-
-
-
 // tensor sum(const tensor& a);
 // tensor exp(const tensor& a);
 // tensor log(const tensor& a);
