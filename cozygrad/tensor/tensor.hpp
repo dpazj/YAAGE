@@ -80,7 +80,12 @@ class tensor
     private:
         size_t calculate_size();
 
-        tensor_shape calculate_broadcast_shape(tensor_shape& x_shape, tensor_shape& y_shape);
+        //broadcast util functions
+        std::vector<size_t> calculate_dimension_offsets(tensor_shape& shape);
+        size_t calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets);
+
+        //broadcasting functions
+        tensor_shape calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_shape);
         tensor<T> broadcast(const tensor<T>& other, std::function<T(T,T)> operation);
 
         T* m_data = nullptr;
@@ -367,7 +372,33 @@ size_t tensor<T>::calculate_size()
 }
 
 template <typename T>
-tensor_shape tensor<T>::calculate_broadcast_shape(tensor_shape& x_shape, tensor_shape& y_shape)
+std::vector<size_t> tensor<T>::calculate_dimension_offsets(tensor_shape& shape)
+{
+    size_t acc = 1;
+    std::vector<size_t> c;
+    for(size_t i=shape.size(); i > 0; i--)
+    {
+        acc *= shape[i-1];
+        c.push_back(acc);
+    }
+    std::reverse(c.begin(), c.end());
+    return c;
+}
+
+template <typename T>
+size_t tensor<T>::calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets)
+{
+    size_t acc = 0;
+    for(size_t i=0; i<counter.size()-1;i++)
+    {
+        acc += counter[i] * offsets[i+1];
+    }
+    return acc;
+}
+
+//returns the resulting tensor shape of the broadcast, also prepends x_shape and y_shape with ones
+template <typename T>
+tensor_shape tensor<T>::calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_shape)
 {
     tensor_shape out_shape;
     size_t n_dims = std::max(x_shape.size(), y_shape.size());
@@ -396,7 +427,7 @@ tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T,T)> operati
 {
     tensor_shape x_shape = m_shape;
     tensor_shape y_shape = y.m_shape;
-    tensor_shape out_shape = calculate_broadcast_shape(x_shape,y_shape);
+    tensor_shape out_shape = calculate_broadcast_shapes(x_shape,y_shape);
 
     tensor<T> out(out_shape);
     
@@ -409,55 +440,23 @@ tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T,T)> operati
             out[i] = operation(a,b);
         }
     }
-    else if(out_shape.size() == 1)
-    {
-        for(size_t j=0; j<out_shape[0];j++)
-        {
-            T a = m_data[(j % x_shape[0])];
-            T b = y.m_data[(j % y_shape[0])];
-            out[j] = operation(a,b);
-        } 
-    }
     else
     {
-        std::function<std::vector<size_t>(std::vector<size_t>&)> calc_cumulative = [](std::vector<size_t>& shape)
-        {
-            size_t acc = 1;
-            std::vector<size_t> c;
-            for(size_t i=shape.size(); i > 0; i--)
-            {
-                acc *= shape[i-1];
-                c.push_back(acc);
-            }
-            std::reverse(c.begin(), c.end());
-            return c;
-        };
-
-        std::function<size_t(std::vector<size_t>&,std::vector<size_t>&)> calc_offset = [](std::vector<size_t>& counter, std::vector<size_t>& offsets)
-        {
-            size_t acc = 0;
-            for(size_t i=0; i<counter.size()-1;i++)
-            {
-                acc += counter[i] * offsets[i+1];
-            }
-            return acc;
-        };
-
-        std::vector<size_t> dim_counter(out_shape.size(), 0); 
         std::vector<size_t> xdim_counter(out_shape.size(), 0);
         std::vector<size_t> ydim_counter(out_shape.size(), 0);
+        std::vector<size_t> o_dim_counter(out_shape.size(), 0); 
 
-        std::vector<size_t> o_c = calc_cumulative(out_shape);     
-        std::vector<size_t> x_c = calc_cumulative(x_shape);     
-        std::vector<size_t> y_c = calc_cumulative(y_shape);     
+        std::vector<size_t> x_dim_offsets = calculate_dimension_offsets(x_shape);     
+        std::vector<size_t> y_dim_offsets = calculate_dimension_offsets(y_shape);    
+        std::vector<size_t> o_dim_offsets = calculate_dimension_offsets(out_shape);     
 
-        std::function<void(size_t)> f = [&](size_t dim){
+        std::function<void(size_t)> recurse_broadcasting = [&](size_t dim){
 
             if(dim == out_shape.size() - 1)
             {
-                size_t x_offset = calc_offset(xdim_counter, x_c); 
-                size_t y_offset = calc_offset(ydim_counter, y_c);
-                size_t o_offset = calc_offset(dim_counter, o_c);
+                size_t x_offset = calculate_offset(xdim_counter, x_dim_offsets); 
+                size_t y_offset = calculate_offset(ydim_counter, y_dim_offsets);
+                size_t o_offset = calculate_offset(o_dim_counter, o_dim_offsets);
                 
                 for(size_t j=0; j<out_shape[dim];j++)
                 {
@@ -470,16 +469,15 @@ tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T,T)> operati
             
             for(size_t i=0;i<out_shape[dim];i++)
             {   
-                dim_counter[dim] = i;
+                o_dim_counter[dim] = i;
                 xdim_counter[dim] = i % x_shape[dim];
                 ydim_counter[dim] = i % y_shape[dim];
-                f(dim + 1);   
+                recurse_broadcasting(dim + 1);   
             }              
         };
-        f(0);
+        recurse_broadcasting(0);
     }
     return out;
-
 }
 
 //operators

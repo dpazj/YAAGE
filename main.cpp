@@ -105,13 +105,14 @@ void broadcasting_test3()
     std::cout << a << std::endl;
     std::cout << b << std::endl;
     std::cout << a + b << std::endl;
+    std::cout << std::endl;
 }
 
 void broadcasting_test4()
 {
     tensor<double> a = {{1, 2, 3}, {4,5,6}, {7,8,9}, {10,11,12}};
     tensor<double> b = {1};
-    std::cout << a + b << std::endl;
+    std::cout << a + b << std::endl << std::endl;
 }
 
 void broadcasting_test5()
@@ -126,7 +127,7 @@ void broadcasting_test5()
 
     std::cout << a << std::endl;
     std::cout << b << std::endl;
-    std::cout << a + b << std::endl;
+    std::cout << a + b << std::endl << std::endl;
 }
 
 void broacasting_test6()
@@ -135,7 +136,6 @@ void broacasting_test6()
     tensor<double> b = {45,55};
     a.reshape({3,1});
     std::cout << a << std::endl << b << std::endl;
-
     std::cout << a + b << std::endl;
     
 }
