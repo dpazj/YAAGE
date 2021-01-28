@@ -79,9 +79,13 @@ class tensor
 
     private:
         size_t calculate_size();
+
+        tensor_shape calculate_broadcast_shape(tensor_shape& x_shape, tensor_shape& y_shape);
+        tensor<T> broadcast(const tensor<T>& other, std::function<T(T,T)> operation);
+
         T* m_data = nullptr;
         size_t m_size = 0;
-        std::vector<size_t> m_shape;
+        tensor_shape m_shape;
 
 };
 
@@ -362,7 +366,124 @@ size_t tensor<T>::calculate_size()
     return size;
 }
 
+template <typename T>
+tensor_shape tensor<T>::calculate_broadcast_shape(tensor_shape& x_shape, tensor_shape& y_shape)
+{
+    tensor_shape out_shape;
+    size_t n_dims = std::max(x_shape.size(), y_shape.size());
+
+    auto prepend_ones = [](tensor_shape& x, size_t dims){
+        while(x.size() < dims){x.insert(x.begin(), 1);}
+        return x;
+    };
+
+    x_shape = prepend_ones(x_shape, n_dims);
+    y_shape = prepend_ones(y_shape, n_dims);
+
+    for(size_t i=0; i < n_dims; i++)
+    {
+        if( (x_shape[i] != 1 && y_shape[i] != 1) && (x_shape[i] != y_shape[i]) )
+        {
+            throw std::runtime_error("Unbroadcastable shapes!");
+        }
+        out_shape.push_back(std::max(x_shape[i], y_shape[i]));
+    }
+    return out_shape;
+}
+
+template <typename T>
+tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T,T)> operation)
+{
+    tensor_shape x_shape = m_shape;
+    tensor_shape y_shape = y.m_shape;
+    tensor_shape out_shape = calculate_broadcast_shape(x_shape,y_shape);
+
+    tensor<T> out(out_shape);
+    
+    if(x_shape == y_shape)
+    {
+        for(size_t i=0; i < out.size(); i++)
+        {
+            T a = m_data[i];
+            T b = y.m_data[i];
+            out[i] = operation(a,b);
+        }
+    }
+    else if(out_shape.size() == 1)
+    {
+        for(size_t j=0; j<out_shape[0];j++)
+        {
+            T a = m_data[(j % x_shape[0])];
+            T b = y.m_data[(j % y_shape[0])];
+            out[j] = operation(a,b);
+        } 
+    }
+    else
+    {
+        std::function<std::vector<size_t>(std::vector<size_t>&)> calc_cumulative = [](std::vector<size_t>& shape)
+        {
+            size_t acc = 1;
+            std::vector<size_t> c;
+            for(size_t i=shape.size(); i > 0; i--)
+            {
+                acc *= shape[i-1];
+                c.push_back(acc);
+            }
+            std::reverse(c.begin(), c.end());
+            return c;
+        };
+
+        std::function<size_t(std::vector<size_t>&,std::vector<size_t>&)> calc_offset = [](std::vector<size_t>& counter, std::vector<size_t>& offsets)
+        {
+            size_t acc = 0;
+            for(size_t i=0; i<counter.size()-1;i++)
+            {
+                acc += counter[i] * offsets[i+1];
+            }
+            return acc;
+        };
+
+        std::vector<size_t> dim_counter(out_shape.size(), 0); 
+        std::vector<size_t> xdim_counter(out_shape.size(), 0);
+        std::vector<size_t> ydim_counter(out_shape.size(), 0);
+
+        std::vector<size_t> o_c = calc_cumulative(out_shape);     
+        std::vector<size_t> x_c = calc_cumulative(x_shape);     
+        std::vector<size_t> y_c = calc_cumulative(y_shape);     
+
+        std::function<void(size_t)> f = [&](size_t dim){
+
+            if(dim == out_shape.size() - 1)
+            {
+                size_t x_offset = calc_offset(xdim_counter, x_c); 
+                size_t y_offset = calc_offset(ydim_counter, y_c);
+                size_t o_offset = calc_offset(dim_counter, o_c);
+                
+                for(size_t j=0; j<out_shape[dim];j++)
+                {
+                    T a = m_data[x_offset + (j % x_shape[dim])];
+                    T b = y.m_data[y_offset + (j % y_shape[dim])];
+                    out[o_offset + j] = operation(a,b);
+                }
+                return;
+            }
+            
+            for(size_t i=0;i<out_shape[dim];i++)
+            {   
+                dim_counter[dim] = i;
+                xdim_counter[dim] = i % x_shape[dim];
+                ydim_counter[dim] = i % y_shape[dim];
+                f(dim + 1);   
+            }              
+        };
+        f(0);
+    }
+    return out;
+
+}
+
 //operators
+
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const tensor<T>& ten)
 {
@@ -396,131 +517,9 @@ tensor<T>& tensor<T>::operator=(const tensor<T>& rhs)
 template <typename T>
 tensor<T> tensor<T>::operator+(const tensor<T>& rhs)
 {
-    //broadcasting - should refactor 
-    tensor_shape x_shape = m_shape;
-    tensor_shape y_shape = rhs.m_shape;
-    tensor_shape out_shape;
-    size_t n_dims = std::max(x_shape.size(), y_shape.size());
-
-    auto prepend_ones = [](tensor_shape& x, size_t dims){
-        while(x.size() < dims){x.insert(x.begin(), 1);}
-        return x;
-    };
-
-    x_shape = prepend_ones(x_shape, n_dims);
-    y_shape = prepend_ones(y_shape, n_dims);
-
-    for(size_t i=0; i < n_dims; i++)
-    {
-        if( (x_shape[i] != 1 && y_shape[i] != 1) && (x_shape[i] != y_shape[i]) )
-        {
-            throw std::runtime_error("Unbroadcastable shapes!");
-        }
-        out_shape.push_back(std::max(x_shape[i], y_shape[i]));
-    }
-
-    tensor<T> out(out_shape);
-    
-    if(x_shape == y_shape)
-    {
-        for(size_t i=0; i < out.size(); i++)
-        {
-            T a = m_data[i];
-            T b = rhs.m_data[i];
-            out[i] = a + b;
-        }
-    }
-    else if(out_shape.size() == 1)
-    {
-        for(size_t j=0; j<out_shape[0];j++)
-        {
-            T a = m_data[(j % x_shape[0])];
-            T b = rhs.m_data[(j % y_shape[0])];
-            out[j] = a + b;
-        } 
-    }
-    else
-    {
-
-        std::vector<size_t> dim_offsets;
-        std::vector<size_t> xdim_offsets;
-        std::vector<size_t> ydim_offsets;
-        size_t acc = 1;
-        size_t accx = 1;
-        size_t accy = 1;
-        for(size_t i=out_shape.size(); i > 0; i--)
-        {
-            acc *= out_shape[i-1];
-            accx *= x_shape[i-1];
-            accy *= y_shape[i-1];
-            dim_offsets.push_back(acc);
-            xdim_offsets.push_back(accx);
-            ydim_offsets.push_back(accy);
-        }
-
-        std::reverse(dim_offsets.begin(), dim_offsets.end());
-        std::reverse(xdim_offsets.begin(), xdim_offsets.end());
-        std::reverse(ydim_offsets.begin(), ydim_offsets.end());
-
-        std::function<void(std::vector<size_t>&)> print_offset = [&](std::vector<size_t>& a)
-        {
-            for(const auto& x : a)
-            {
-                std::cout << x << " ";
-            }
-            std::cout << std::endl;
-        };
-
-        std::cout << "OFFSETS:" << std::endl;
-        print_offset(dim_offsets);
-        print_offset(xdim_offsets);
-        print_offset(ydim_offsets);
-        std::cout << std::endl;
-        
-
-        size_t x_idx = 0; 
-        size_t y_idx = 0;
-        size_t o_idx = 0;
-        std::function<void(int)> f = [&](size_t dim){
-
-            
-            for(size_t i=0;i<out_shape[dim];i++)
-            {           
-                //std::cout << x_idx << " " << y_idx << " " << o_idx <<  std::endl;     
-                if(dim == out_shape.size() - 2)
-                {
-                    for(size_t j=0; j<out_shape[dim+1];j++)
-                    {
-                        T a = m_data[x_idx + (j % x_shape[dim + 1])];
-                        T b = rhs.m_data[y_idx + (j % y_shape[dim + 1])];
-                        out[o_idx + j] = a + b;
-
-                        std::cout << x_idx + (j % x_shape[dim + 1]) << " " << y_idx + (j % y_shape[dim + 1]) << " " << o_idx + j <<  std::endl;
-
-
-
-                    }
-                }
-                else
-                {
-                    f(dim + 1);   
-                }
-                // std::cout << "info: " << out_shape[dim] << " " << out_shape[dim+1] << " " << x_shape[dim] << " " << y_shape[dim] << " " << dim_offsets[dim]<< std::endl;
-                // x_idx += out_shape[dim+1] / 2 % x_shape[dim]; y_idx += out_shape[dim+1] % y_shape[dim]; o_idx += out_shape[dim+1];
-
-                //std::cout << "info: " << xdim_offsets[dim+1] << " " << ydim_offsets[dim+1] << " " << dim_offsets[dim+1] << " " << (out_shape[dim] == y_shape[dim]) << " " <<  (out_shape[dim] == x_shape[dim]) << std::endl;
-                
-                x_idx += xdim_offsets[dim+1] * !(1 == x_shape[dim]); 
-                y_idx += ydim_offsets[dim+1] * !(1 == y_shape[dim]); 
-                o_idx += dim_offsets[dim+1] * !(1 == out_shape[dim]); 
-            }
-        };
-
-        f(0);
-    }
-    
-
-    return out;
+    return broadcast(rhs, [](T a, T b){
+        return a+b;
+    });
 }
 
 template <typename T>

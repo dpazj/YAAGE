@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random> 
+#include <algorithm>
 
 std::mt19937 gen(1337);
 
@@ -12,6 +13,12 @@ namespace utils
         std::uniform_real_distribution<double> dis(min, max);
         return dis(gen);
     }
+
+
+    
+
+    
+
 
 } // namespace utils
 }//namespace czy
