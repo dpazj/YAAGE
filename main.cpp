@@ -133,19 +133,27 @@ void broacasting_test6()
     tensor<double> b = {45,55};
     a.reshape({3,1});
     std::cout << a << std::endl << b << std::endl;
-    std::cout << a * b << std::endl;
+    std::cout << 5.0 / a << std::endl;
+    std::cout << a / 5.0 << std::endl;
     
 }
 
+void t_test(){
+    tensor<double> a = {1,2,3,4,5};
+    std::cout << op::pow(a, 3.0) << std::endl;
+    std::cout << -a << std::endl;
+}
 
 void tensor_test()
 {
-    broadcasting_test1();
-    broadcasting_test2();
-    broadcasting_test3();
-    broadcasting_test4();
-    broadcasting_test5();
+    // broadcasting_test1();
+    // broadcasting_test2();
+    // broadcasting_test3();
+    // broadcasting_test4();
+    // broadcasting_test5();
     broacasting_test6();
+
+    t_test();
 
     // std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     // std::vector<char> w_buf(w_data.size() * sizeof(double));

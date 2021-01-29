@@ -1,6 +1,8 @@
 #pragma once
 
 #include "tensor/tensor.hpp"
+#include "tensor/tensor_ops.hpp"
+
 
 
 // #include "autograd/node.hpp"

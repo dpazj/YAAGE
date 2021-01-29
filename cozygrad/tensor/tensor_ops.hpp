@@ -3,22 +3,69 @@
 #include "tensor.hpp"
 
 #include <stdexcept>
-#include <math.h>
+#include <cmath>
 
 namespace czy{
 namespace op{
 
+//UNARY OPS
+template <typename T>
+tensor<T> exp(const tensor<T>& a)
+{
+    return a.unary_operation([](T a){return std::exp(a);});
+}
 
-// tensor sum(const tensor& a);
-// tensor exp(const tensor& a);
-// tensor log(const tensor& a);
-// tensor max(const tensor& a, double y);
-// tensor pow(const tensor& a, double e);
-// tensor dot(const tensor& a, const tensor& b);
-// tensor transpose(const tensor& a);
+template <typename T>
+tensor<T> log(const tensor<T>& a)
+{
+    return a.unary_operation([](T a){return std::log(a);});
+}
 
-//for now we will just sum over both axis
-//TODO sum over chosen axis;
+
+//BROADCAST OPS
+
+//max
+template <typename T>
+tensor<T> max(const tensor<T>& x, const tensor<T>& y)
+{
+    return x.broadcast( y, [](T& a, T& b)
+    {
+        return std::max(a, b);
+    });
+}
+template <typename T>
+tensor<T> max(const tensor<T>& x, T y)
+{
+    return max(x, tensor<T>(y));
+}
+template <typename T>
+tensor<T> max(T x,const tensor<T>& y)
+{
+    return max(tensor<T>(x), y);
+}
+
+//pow
+template <typename T>
+tensor<T> pow(const tensor<T>& x, const tensor<T>& y)
+{
+    return x.broadcast(y, [](T a, T b)
+    {
+        return std::pow(a, b);
+    });
+}
+template <typename T>
+tensor<T> pow(const tensor<T>& x, T y)
+{
+    return pow(x, tensor<T>(y));
+}
+template <typename T>
+tensor<T> pow(T x,const tensor<T>& y)
+{
+    return pow(tensor<T>(x), y);
+}
+
+
+
 // tensor sum(const tensor& a) 
 // {
 //     tensor c(1,1);
@@ -37,35 +84,7 @@ namespace op{
 //     return c;
 // }
 
-// tensor exp(const tensor& a)
-// {
-//     tensor c(a.rows(), a.columns());
-//     double* a_data = a.data();
-//     double* c_data = c.data();
-//     for(size_t i=0; i < a.rows(); i++)
-//     {
-//         for(size_t j=0; j < a.columns(); j++)
-//         {
-//             c_data[i] = std::exp(a_data[i]);
-//         }
-//     }
-//     return c;
-// }
 
-// tensor log(const tensor& a)
-// {
-//     tensor c(a.rows(), a.columns());
-//     double* a_data = a.data();
-//     double* c_data = c.data();
-//     for(size_t i=0; i < a.rows(); i++)
-//     {
-//         for(size_t j=0; j < a.columns(); j++)
-//         {
-//             c_data[i] = std::log(a_data[i]);
-//         }
-//     }
-//     return c;
-// }
 
 // tensor max(const tensor& a, double y)
 // {
@@ -143,6 +162,6 @@ namespace op{
 //     return a_t;
 // }
 
-// }//namespace op
-// }//namespace czy
+}//namespace op
+}//namespace czy
 

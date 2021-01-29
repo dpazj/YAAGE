@@ -22,12 +22,12 @@ class tensor
 {
     public:
         tensor();
+        tensor(T x); 
         tensor(const tensor& x);
         tensor(tensor_shape& shape);
 
         tensor(std::vector<char>& buf, std::initializer_list<size_t> shape) : tensor(buf, tensor_shape(shape)){};
         tensor(std::vector<char>& buf, tensor_shape shape);
-        //tensor(std::vector<double> buf, std::initializer_list<size_t> shape);
 
         tensor(std::initializer_list<T> il);
         tensor(std::initializer_list<std::initializer_list<T>> il);
@@ -39,8 +39,9 @@ class tensor
         void reshape(std::initializer_list<size_t> new_shape);
         tensor<T> slice(int start, int end=-1);
 
-
-        tensor<T> map(std::function<T(T)> operation);
+        tensor<T> broadcast(const tensor<T>& other, std::function<T(T&,T&)> operation) const;
+        tensor<T> unary_operation(std::function<T(T&)> operation) const;
+        void map(std::function<T(T&)> operation);
         void of_value(T val);
         void zeros();
         void ones();
@@ -56,20 +57,14 @@ class tensor
         //operators
         T& operator[](size_t i);
         tensor<T>& operator=(const tensor<T>& rhs);
+        tensor<T>& operator=(T rhs);
 
         tensor<T> operator+(const tensor<T>& rhs);
-        tensor operator+(T rhs);
-
-        tensor operator-(const tensor& rhs);
-        tensor operator-(T rhs);
-
+        tensor<T> operator-(const tensor& rhs);
         tensor<T> operator*(const tensor<T>& rhs);
-        tensor<T> operator*(const T rhs);
+        tensor<T> operator/(const tensor<T>& rhs);
 
-        tensor operator/(const tensor& rhs);
-        tensor operator/(const T rhs);
-
-        tensor operator-();
+        tensor<T> operator-();
 
         //Friends
         template <typename TT>
@@ -79,14 +74,12 @@ class tensor
         size_t calculate_size();
 
         //broadcast util functions
-        std::vector<size_t> calculate_dimension_offsets(tensor_shape& shape);
-        size_t calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets);
+        std::vector<size_t> calculate_dimension_offsets(tensor_shape& shape) const;
+        size_t calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets) const;
 
         //broadcasting functions
-        tensor_shape calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_shape);
-        tensor<T> broadcast(const tensor<T>& other, std::function<T(T,T)> operation);
+        tensor_shape calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_shape) const;
 
-        tensor<T> unary_operation(std::function<T(T)> operation);
 
         T* m_data = nullptr;
         size_t m_size = 0;
@@ -108,6 +101,16 @@ tensor<T>::tensor() : m_shape()
 {
 
 }
+
+template <typename T>
+tensor<T>::tensor(T x)
+{
+    m_shape = {1};
+    m_size = 1;
+    m_data = new T[m_size];
+    *m_data = x;
+}; 
+
 
 template <typename T>
 tensor<T>::tensor(const tensor<T>& x)
@@ -283,27 +286,43 @@ tensor<T> tensor<T>::slice(int start, int end)
 }
 
 template <typename T>
-void tensor<T>::of_value(T val)
+tensor<T> tensor<T>::unary_operation(std::function<T(T&)> operation) const
+{
+    tensor_shape new_shape = m_shape;
+    tensor<T> out(new_shape);
+    for(size_t i=0; i < out.m_size; i++)
+    {
+        out[i] = operation(m_data[i]);
+    }
+    return out;
+}
+
+template <typename T>
+void tensor<T>::map(std::function<T(T&)> operation)
 {
     for(size_t i=0; i< m_size; i++)
     {
-        m_data[i] = val;
+        m_data[i] = operation(m_data[i]);
     }
 }
 
 template <typename T>
-void tensor<T>::zeros(){of_value(0.0f);}
+void tensor<T>::of_value(T val)
+{
+    
+    map([&val](T&){return val;});
+}
 
 template <typename T>
-void tensor<T>::ones(){of_value(1.0f);}
+void tensor<T>::zeros(){of_value(0);}
+
+template <typename T>
+void tensor<T>::ones(){of_value(1);}
 
 template <typename T>
 void tensor<T>::random(T min, T max)
 {
-    for(size_t i=0; i< m_size; i++)
-    {
-        m_data[i] = utils::get_rand_double(min, max);
-    }
+    map([&min, &max](T&){return utils::get_rand_double(min, max);});
 }
 
 template <typename T>
@@ -351,7 +370,7 @@ void tensor<T>::print_shape(std::ostream& os) const
     for(size_t i =0; i < m_shape.size(); i++)
     {
         os << m_shape[i];
-        if(i != m_shape.size() -1)
+        if(i != m_shape.size()-1)
         {
             os << ",";
         }
@@ -372,18 +391,7 @@ size_t tensor<T>::calculate_size()
 }
 
 template <typename T>
-tensor<T> tensor<T>::unary_operation(std::function<T(T)> operation)
-{
-    tensor<T> out(m_shape);
-    for(size_t i=0; i < out.m_size; i++)
-    {
-        out[i] = operation(m_data[i]);
-    }
-    out;
-}
-
-template <typename T>
-std::vector<size_t> tensor<T>::calculate_dimension_offsets(tensor_shape& shape)
+std::vector<size_t> tensor<T>::calculate_dimension_offsets(tensor_shape& shape) const
 {
     size_t acc = 1;
     std::vector<size_t> c;
@@ -397,7 +405,7 @@ std::vector<size_t> tensor<T>::calculate_dimension_offsets(tensor_shape& shape)
 }
 
 template <typename T>
-size_t tensor<T>::calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets)
+size_t tensor<T>::calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets) const
 {
     size_t acc = 0;
     for(size_t i=0; i<counter.size()-1;i++)
@@ -409,7 +417,7 @@ size_t tensor<T>::calculate_offset(std::vector<size_t>& counter, std::vector<siz
 
 //returns the resulting tensor shape of the broadcast, also prepends x_shape and y_shape with ones
 template <typename T>
-tensor_shape tensor<T>::calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_shape)
+tensor_shape tensor<T>::calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_shape) const
 {
     tensor_shape out_shape;
     size_t n_dims = std::max(x_shape.size(), y_shape.size());
@@ -434,7 +442,7 @@ tensor_shape tensor<T>::calculate_broadcast_shapes(tensor_shape& x_shape, tensor
 }
 
 template <typename T>
-tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T,T)> operation)
+tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T&,T&)> operation) const
 {
     tensor_shape x_shape = m_shape;
     tensor_shape y_shape = y.m_shape;
@@ -453,30 +461,17 @@ tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T,T)> operati
         }
     }
     else if(m_size == 1 || y.m_size == 1)
-    {
-        T* size1_data_ptr = nullptr;
-        T* other_data_ptr = nullptr;
-
-        if(m_size == 1)
-        {
-            size1_data_ptr = m_data;
-            other_data_ptr = y.m_data;
-        }
-        else
-        {
-            size1_data_ptr = y.m_data;
-            other_data_ptr = m_data;
-        }
-        
+    {        
         for(size_t i=0; i < out.size(); i++)
         {
-            T a = size1_data_ptr[0];
-            T b = other_data_ptr[i];
+            T a = m_data[i % m_size];
+            T b = y.m_data[i % y.m_size];
             out[i] = operation(a,b);
         }
     }
     else
     {
+        //this can be optimized by adding the offset at each loop instead of calculating on the last dim
         std::vector<size_t> xdim_counter(out_shape.size(), 0);
         std::vector<size_t> ydim_counter(out_shape.size(), 0);
         std::vector<size_t> o_dim_counter(out_shape.size(), 0); 
@@ -548,97 +543,69 @@ tensor<T>& tensor<T>::operator=(const tensor<T>& rhs)
 
 //adding
 template <typename T>
-tensor<T> tensor<T>::operator+(const tensor<T>& rhs)
+tensor<T> tensor<T>::operator+(const tensor<T>& y)
 {
-    return broadcast(rhs, [](T a, T b){
+    return broadcast(y, [](T& a, T& b){
         return a+b;
     });
 }
 
 template <typename T>
-tensor<T> tensor<T>::operator+(T rhs)
+tensor<T> operator+(T x, const tensor<T>& y)
 {
-    tensor<T> x = {rhs};
-    return x + *this;
-}
-
-template <typename T>
-tensor<T> operator+(const tensor<T>& lhs, T rhs)
-{
-    return rhs + lhs;
+    return (tensor<T>) x + y;
 }
 
 //subbing
 template <typename T>
-tensor<T> tensor<T>::operator-(const tensor<T>& rhs)
+tensor<T> tensor<T>::operator-(const tensor<T>& y)
 {
-    return broadcast(rhs, [](T a, T b){
+    return broadcast(y, [](T& a, T& b){
         return a-b;
     });
 }
 
 template <typename T>
-tensor<T> tensor<T>::operator-(T rhs)
+tensor<T> operator-(T x, const tensor<T>& y)
 {
-    tensor<T> x = {rhs};
-    return x - *this;
-}
-
-template <typename T>
-tensor<T> operator-(const tensor<T>& lhs, T rhs)
-{
-    return lhs - rhs;
+    return (tensor<T>) x - y;
 }
 
 //multiplying
 template <typename T>
-tensor<T> tensor<T>::operator*(const tensor<T>& rhs)
+tensor<T> tensor<T>::operator*(const tensor<T>& y)
 {
-    return broadcast(rhs, [](T a, T b){
+    return broadcast(y, [](T& a, T& b){
         return a*b;
     });
 }
 
 template <typename T>
-tensor<T> tensor<T>::operator*(T rhs)
+tensor<T> operator*(T x, const tensor<T>& y)
 {
-    tensor<T> x = {rhs};
-    return x * *this;
-}
-
-template <typename T>
-tensor<T> operator*(const tensor<T>& lhs, T rhs)
-{
-    return rhs * lhs;
+    return y * x;
 }
 
 // //dividing
 template <typename T>
-tensor<T> tensor<T>::operator/(const tensor<T>& rhs)
+tensor<T> tensor<T>::operator/(const tensor<T>& y)
 {
-    return broadcast(rhs, [](T a, T b){
+    return broadcast(y, [](T& a, T& b){
         return a/b;
     });
 }
 
 template <typename T>
-tensor<T> tensor<T>::operator/(T rhs)
+tensor<T> operator/(T x, const tensor<T>& y)
 {
-    tensor<T> x = {rhs};
-    return x / *this;
-}
-
-template <typename T>
-tensor<T> operator/(const tensor<T>& lhs, T rhs)
-{
-    return rhs / lhs;
+    return (tensor<T>) x / y;
 }
 
 //UNARY OPERATORS
 template <typename T>
 tensor<T> tensor<T>::operator-()
 {
-    return unary_operation([](T a){return -a;});
+    return unary_operation([](T& a){return -a;});
 }
 
 
