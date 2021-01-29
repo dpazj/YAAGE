@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <cmath>
+#include <algorithm>
 
 namespace czy{
 namespace op{
@@ -33,11 +34,13 @@ tensor<T> max(const tensor<T>& x, const tensor<T>& y)
         return std::max(a, b);
     });
 }
+
 template <typename T>
 tensor<T> max(const tensor<T>& x, T y)
 {
     return max(x, tensor<T>(y));
 }
+
 template <typename T>
 tensor<T> max(T x,const tensor<T>& y)
 {
@@ -53,11 +56,13 @@ tensor<T> pow(const tensor<T>& x, const tensor<T>& y)
         return std::pow(a, b);
     });
 }
+
 template <typename T>
 tensor<T> pow(const tensor<T>& x, T y)
 {
     return pow(x, tensor<T>(y));
 }
+
 template <typename T>
 tensor<T> pow(T x,const tensor<T>& y)
 {
@@ -65,50 +70,68 @@ tensor<T> pow(T x,const tensor<T>& y)
 }
 
 
+template <typename T>
+tensor<T> sum(const tensor<T>& x) 
+{
+    T* data_ptr = x.data();
+    T acc = 0;
+    for(size_t i=0; i<x.size();i++)
+    {
+        acc += data_ptr[i];
+    }
+    return tensor<T>(acc);
+}
 
-// tensor sum(const tensor& a) 
-// {
-//     tensor c(1,1);
-//     double* a_data = a.data();
-//     double* c_data = c.data();
-//     double acc = 0.0f;
-//     for(size_t i=0; i < a.rows(); i++)
-//     {
-//         size_t offset = a.columns() * i;
-//         for(size_t j=0; j < a.columns(); j++)
-//         {
-//             acc += a_data[offset + j];
-//         }
-//     }
-//     c_data[0] = acc;
-//     return c;
-// }
+template <typename T>
+tensor<T> sum(const tensor<T>& x, std::initializer_list<unsigned int> axis_il) 
+{
+    tensor_shape out_shape = x.shape();
+    tensor_shape x_shape = x.shape();
+    unsigned int max_axis = out_shape.size() - 1;
+    std::vector<unsigned int> axes = axis_il;
+    std::sort(axes.begin(), axes.end());
+    for(const auto& x : axes)
+    {
+        if(x > max_axis)
+        {
+            throw std::runtime_error("axis " + std::to_string(x) + " out of bounds for tensor of dimension " + std::to_string(max_axis + 1));
+        }
+        out_shape[x] = 1;
+    }
+
+    tensor<T> out(out_shape);
+
+    auto x_offsets = x.calculate_dimension_offsets(x_shape);
+
+    std::function<void(std::vector<size_t>&)> print_vec = [](std::vector<size_t>& to_print){for(const auto& x: to_print){std::cout << x << " ";} std::cout << std::endl;};
+    print_vec(x_offsets);
+
+    // for(const auto& axis : axes)
+    // {
+    //     // size_t offset = x_offsets[axis + 1];
+    //     // size_t dim_shape = x_shape[axis];
+    //     // size_t iterations = x_offsets[axis] / dim_shape;
+
+    //     // T* x_data_ptr = x.data();
+
+    unsinged int axis = 0;
+
+
+        
+    // }
+
+
+    return out;
+}
+
+template <typename T>
+tensor<T> sum(const tensor<T>& x, unsigned int axis) 
+{ 
+    return sum(x, {axis});
+}
 
 
 
-// tensor max(const tensor& a, double y)
-// {
-//     tensor c(a.rows(), a.columns());
-//     double* a_data = a.data();
-//     double * c_data = c.data();
-//     for(size_t i=0; i<a.size(); i++)
-//     {
-//         c_data[i] = std::max(a_data[i], y);
-//     }
-//     return c;
-// }
-
-// tensor pow(const tensor& a, double e)
-// {
-//     tensor c(a.rows(), a.columns());
-//     double* a_data = a.data();
-//     double * c_data = c.data();
-//     for(size_t i=0; i<a.size(); i++)
-//     {
-//         c_data[i] = std::pow(a_data[i], e);
-//     }
-//     return c;
-// }
 
 // tensor dot(const tensor& a, const tensor& b)
 // {
