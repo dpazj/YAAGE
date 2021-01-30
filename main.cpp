@@ -140,9 +140,11 @@ void broacasting_test6()
 
 void sum_test1()
 {
-    tensor<double> a = {1,2,3,4,5,6,7,8,9,10};
-    a.reshape({5,2});
+    tensor<double> a = {1,2,3,4,5,6,7,8,9,10,11,12};
+    a.reshape({2,2,3});
     std::cout << a << std::endl;
+    std::cout << op::sum(a,2) << std::endl;
+    std::cout << op::sum(a,1) << std::endl;
     std::cout << op::sum(a,0) << std::endl;
 
 

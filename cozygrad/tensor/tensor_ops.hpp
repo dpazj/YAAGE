@@ -114,7 +114,7 @@ tensor<T> sum(const tensor<T>& x, std::initializer_list<unsigned int> axis_il)
 
     //     // T* x_data_ptr = x.data();
 
-    unsinged int axis = 0;
+   // unsinged int axis = 0;
 
 
         
@@ -127,8 +127,50 @@ tensor<T> sum(const tensor<T>& x, std::initializer_list<unsigned int> axis_il)
 template <typename T>
 tensor<T> sum(const tensor<T>& x, unsigned int axis) 
 { 
-    return sum(x, {axis});
+    tensor_shape out_shape = x.shape();
+    tensor_shape x_shape = x.shape();
+
+    unsigned int max_axis = x_shape.size() -1;
+    if(axis > max_axis)
+    {
+        throw std::runtime_error("axis " + std::to_string(axis) + " out of bounds for tensor of dimension " + std::to_string(max_axis + 1));
+    }
+
+    out_shape[axis] = 1;
+
+    tensor<T> out(out_shape);
+    std::vector<size_t> x_offsets = x.calculate_dimension_offsets(x_shape);
+    size_t offset_j = axis == max_axis ? 1 : x_offsets[axis + 1];
+
+    //T* x_data = x.data();
+
+    std::function<void(std::vector<size_t>&)> print_vec = [](std::vector<size_t>& to_print){for(const auto& x: to_print){std::cout << x << " ";} std::cout << std::endl;};
+    print_vec(x_offsets);
+    std::cout << offset_j << std::endl;
+
+    for(size_t i=0; i<out.size();i++)
+    {
+        std::cout << i + ((i / offset_j) *  << " ";
+    }
+    std::cout << std::endl;
+    return out;
 }
+
+// j is number of elements we are adding together
+// offset_j is the offset between the numbers we are adding together
+
+// [[[1 2 3] [4 5 6]]] [[[7 8 9] [10,11,12]]] 
+
+// [[[6] [15]]] [[[24] [[33]]] axis = 2   j=3 offset_j=1   i=0,3,6,9
+
+// [[[5,7,9]] [[17,19,21]]] axis = 1; j=2 offset_j=3       i=0,1,2 6,7,8
+
+// [[[8,10,12] [14,16,18]]] j=2 offset_j=6                 i=0,1,2,3,4,5
+
+
+
+
+
 
 
 
