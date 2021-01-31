@@ -69,6 +69,7 @@ tensor<T> pow(T x,const tensor<T>& y)
     return pow(tensor<T>(x), y);
 }
 
+//reduce ops
 template <typename T>
 tensor<T> sum(const tensor<T>& x) 
 {
@@ -82,7 +83,7 @@ tensor<T> sum(const tensor<T>& x)
 }
 
 template <typename T>
-tensor<T> sum(const tensor<T>& x, unsigned int axis) 
+tensor<T> sum(const tensor<T>& x, unsigned int axis, bool reshape = true) //reshape removes the summed axis from the resulting tensor e.g (5,5,3) summed on axis 1 -> (5,3)
 { 
     tensor_shape out_shape = x.shape();
     tensor_shape x_shape = x.shape();
@@ -134,6 +135,12 @@ tensor<T> sum(const tensor<T>& x, unsigned int axis)
     };
     recursive_sum_dimension(0);
 
+    if(reshape)
+    {
+        out_shape.erase(out_shape.begin() + axis);
+        out.reshape(out_shape);
+    }
+    
     return out;
 }
 
@@ -143,7 +150,7 @@ tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes)
     tensor_shape out_shape = x.shape();
     tensor_shape x_shape = x.shape();
     unsigned int max_axis = out_shape.size() - 1;
-    //std::vector<unsigned int> axes = axis_il;
+
     for(const auto& x : axes)
     {
         if(x > max_axis)
@@ -152,18 +159,46 @@ tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes)
         }
         out_shape[x] = 1;
     }
-
-    tensor<T> out = sum(x, axes[0]);
+    tensor<T> out = sum(x, axes[0],false);
     axes.erase(axes.begin());
     
     for(const auto& axis : axes)
     {
-        out = sum(out, axis);        
+        out = sum(out, axis, false);        
     }
+
+    //hacks - assumes that each dimension's shape is not zero - which it cant be!
+    tensor_shape new_shape;
+    for(const auto& axis : axes)
+    {
+        out_shape[axis] = 0;
+    }
+    for(const auto& x: out_shape)
+    {
+        if(x != 0)
+        {
+            new_shape.push_back(x);
+        }
+    }
+    out.reshape(new_shape);
     return out;
 }
 
+template <typename T>
+tensor<T> unbroadcast(const tensor<T>& x, tensor_shape shape)
+{
+    std::vector<unsigned int> axes_to_sum;
+    auto x_shape = x.shape();
 
+    for(size_t i=0; i<shape.size();i++)
+    {
+        if(shape[i] == 1 && x_shape[i] > 1)
+        {
+            axes_to_sum.push_back((unsigned int) i);
+        }
+    }
+    return sum(x, axes_to_sum).reshape(shape);
+}
 
 // tensor dot(const tensor& a, const tensor& b)
 // {

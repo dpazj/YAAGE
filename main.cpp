@@ -83,10 +83,9 @@ using namespace czy;
 
 void broadcasting_test1()
 {
-
     tensor<double> a = {1, 2, 3};
     tensor<double> b = {2, 2, 2};
-    std::cout << a + b << std::endl << std::endl;
+    std::cout << a + b << std::endl;
 }
 
 void broadcasting_test2()
@@ -143,28 +142,40 @@ void sum_test1()
     // std::cout << op::sum(a,1) << std::endl << std::endl;
     // std::cout << op::sum(a,2) << std::endl << std::endl;
 
-
     std::cout << op::sum(op::sum(a,0),2) << std::endl << std::endl;
     std::cout << op::sum(a, {0,2}) << std::endl << std::endl;
+}
 
+void sum_test2()
+{
+    tensor<double> a = {1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10};
+    a.reshape({5,2,10,1});
+    std::cout << a << std::endl;
+    std::cout << std::endl;
+    std::cout << op::sum(a,0) << std::endl;
+    std::cout << op::sum(a,1) << std::endl;
+    std::cout << op::sum(a,2) << std::endl;
+    std::cout << op::sum(a,3) << std::endl;
+    std::cout << op::sum(a,{1,2,3}) << std::endl;
+}
 
-
+void equals_test()
+{
 
 }
 
-
 void tensor_test()
 {
-    broadcasting_test1();
-    broadcasting_test2();
-    broadcasting_test3();
-    broadcasting_test5();
-    broacasting_test6();
+//     broadcasting_test1();
+//     broadcasting_test2();
+//     broadcasting_test3();
+//     broadcasting_test5();
+//     broacasting_test6();
 
-    
+//     sum_test1();
+    sum_test2();
 
-
-    sum_test1();
+    equals_test();
 
     // std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     // std::vector<char> w_buf(w_data.size() * sizeof(double));

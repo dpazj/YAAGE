@@ -36,13 +36,11 @@ class tensor
 
         ~tensor();
 
-        void reshape(std::initializer_list<size_t> new_shape);
+        void reshape(tensor_shape new_shape);
         tensor<T> slice(int start, int end=-1);
 
         tensor<T> broadcast(const tensor<T>& other, std::function<T(T&,T&)> operation) const;
-        tensor<T> unbroadcast(tensor_shape& shape) const;
         std::vector<size_t> calculate_dimension_offsets(tensor_shape& shape) const;
-        size_t calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets) const;
 
         tensor<T> unary_operation(std::function<T(T&)> operation) const;
         void map(std::function<T(T&)> operation);
@@ -62,6 +60,8 @@ class tensor
         T& operator[](size_t i);
         tensor<T>& operator=(const tensor<T>& rhs);
         tensor<T>& operator=(T rhs);
+        bool operator==(const tensor<T>& other);
+        bool operator!=(const tensor<T>& other);
 
         tensor<T> operator+(const tensor<T>& rhs);
         tensor<T> operator-(const tensor& rhs);
@@ -139,7 +139,6 @@ tensor<T>::tensor(std::vector<char>& buf, tensor_shape shape)
     {
         throw std::runtime_error("Buffer size does not match size given by shape!");
     }
-
     std::memcpy(m_data, buf.data(),buf.size());
 }
 
@@ -248,7 +247,7 @@ tensor<T>::tensor(std::initializer_list<std::initializer_list<std::initializer_l
 }
 
 template <typename T>
-void tensor<T>::reshape(std::initializer_list<size_t> new_shape)
+void tensor<T>::reshape(tensor_shape new_shape)
 {
     tensor_shape old = m_shape;
     size_t old_size = m_size;
@@ -384,9 +383,9 @@ template <typename T>
 size_t tensor<T>::calculate_size()
 {
     size_t size = 0;
+    if(m_shape.size() > 0) size = 1;
     for(const auto& x : m_shape)
     {
-        if(size == 0){size = 1;}
         size *= x;
     }
     return size;
@@ -404,17 +403,6 @@ std::vector<size_t> tensor<T>::calculate_dimension_offsets(tensor_shape& shape) 
     }
     std::reverse(c.begin(), c.end());
     return c;
-}
-
-template <typename T>
-size_t tensor<T>::calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets) const
-{
-    size_t acc = 0;
-    for(size_t i=0; i<counter.size()-1;i++)
-    {
-        acc += counter[i] * offsets[i+1];
-    }
-    return acc;
 }
 
 //returns the resulting tensor shape of the broadcast, also prepends x_shape and y_shape with ones
@@ -510,7 +498,6 @@ tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T&,T&)> opera
 }
 
 //operators
-
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const tensor<T>& ten)
 {
@@ -538,6 +525,25 @@ tensor<T>& tensor<T>::operator=(const tensor<T>& rhs)
     m_data = new T[m_size];
     std::memcpy(m_data, rhs.m_data, m_size * sizeof(T));
     return *this;
+}
+
+template <typename T>
+bool tensor<T>::operator==(const tensor<T>& other)
+{
+    if(m_size != other.m_size) return false;
+    if(other.m_shape != m_shape) return false;
+
+    for(size_t i=0; i<m_size;i++)
+    {
+        if(m_data[i] != other.m_data[i]) return false;
+    }
+    return true;
+}
+
+template <typename T>
+bool tensor<T>::operator!=(const tensor<T>& other)
+{
+    return ! (*this==other);
 }
 
 //adding
