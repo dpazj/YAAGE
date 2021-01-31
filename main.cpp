@@ -108,12 +108,6 @@ void broadcasting_test3()
     std::cout << std::endl;
 }
 
-void broadcasting_test4()
-{
-    tensor<double> a = {{1, 2, 3}, {4,5,6}, {7,8,9}, {10,11,12}};
-    tensor<double> b = {1};
-    std::cout << a + b << std::endl << std::endl;
-}
 
 void broadcasting_test5()
 {
@@ -135,6 +129,7 @@ void broacasting_test6()
     std::cout << a << std::endl << b << std::endl;
     std::cout << 5.0 / a << std::endl;
     std::cout << a / 5.0 << std::endl;
+    std::cout << a * b << std::endl;
     
 }
 
@@ -144,10 +139,13 @@ void sum_test1()
     
     a.reshape({4,2,3});
     std::cout << a << std::endl;
-    std::cout << op::sum(a,0) << std::endl << std::endl;
-    std::cout << op::sum(a,1) << std::endl << std::endl;
-    std::cout << op::sum(a,2) << std::endl << std::endl;
-    std::cout << op::sum(op::sum(op::sum(a,1),0),2) << std::endl << std::endl;
+    // std::cout << op::sum(a,0) << std::endl << std::endl;
+    // std::cout << op::sum(a,1) << std::endl << std::endl;
+    // std::cout << op::sum(a,2) << std::endl << std::endl;
+
+
+    std::cout << op::sum(op::sum(a,0),2) << std::endl << std::endl;
+    std::cout << op::sum(a, {0,2}) << std::endl << std::endl;
 
 
 
@@ -157,12 +155,11 @@ void sum_test1()
 
 void tensor_test()
 {
-    // broadcasting_test1();
-    // broadcasting_test2();
-    // broadcasting_test3();
-    // broadcasting_test4();
-    // broadcasting_test5();
-    //broacasting_test6();
+    broadcasting_test1();
+    broadcasting_test2();
+    broadcasting_test3();
+    broadcasting_test5();
+    broacasting_test6();
 
     
 

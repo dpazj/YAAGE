@@ -40,11 +40,9 @@ class tensor
         tensor<T> slice(int start, int end=-1);
 
         tensor<T> broadcast(const tensor<T>& other, std::function<T(T&,T&)> operation) const;
+        tensor<T> unbroadcast(tensor_shape& shape) const;
         std::vector<size_t> calculate_dimension_offsets(tensor_shape& shape) const;
         size_t calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets) const;
-
-
-
 
         tensor<T> unary_operation(std::function<T(T&)> operation) const;
         void map(std::function<T(T&)> operation);
@@ -475,23 +473,17 @@ tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T&,T&)> opera
     }
     else
     {
-        //this can be optimized by adding the offset at each loop instead of calculating on the last dim
-        std::vector<size_t> xdim_counter(out_shape.size(), 0);
-        std::vector<size_t> ydim_counter(out_shape.size(), 0);
-        std::vector<size_t> o_dim_counter(out_shape.size(), 0); 
-
         std::vector<size_t> x_dim_offsets = calculate_dimension_offsets(x_shape);     
         std::vector<size_t> y_dim_offsets = calculate_dimension_offsets(y_shape);    
-        std::vector<size_t> o_dim_offsets = calculate_dimension_offsets(out_shape);     
+        std::vector<size_t> o_dim_offsets = calculate_dimension_offsets(out_shape);    
+
+        size_t x_offset, y_offset, o_offset; 
+        x_offset = y_offset = o_offset = 0;
 
         std::function<void(size_t)> recurse_broadcasting = [&](size_t dim){
 
             if(dim == out_shape.size() - 1)
             {
-                size_t x_offset = calculate_offset(xdim_counter, x_dim_offsets); 
-                size_t y_offset = calculate_offset(ydim_counter, y_dim_offsets);
-                size_t o_offset = calculate_offset(o_dim_counter, o_dim_offsets);
-                
                 for(size_t j=0; j<out_shape[dim];j++)
                 {
                     T a = m_data[x_offset + (j % x_shape[dim])];
@@ -503,11 +495,14 @@ tensor<T> tensor<T>::broadcast(const tensor<T>& y, std::function<T(T&,T&)> opera
             
             for(size_t i=0;i<out_shape[dim];i++)
             {   
-                o_dim_counter[dim] = i;
-                xdim_counter[dim] = i % x_shape[dim];
-                ydim_counter[dim] = i % y_shape[dim];
                 recurse_broadcasting(dim + 1);   
-            }              
+                x_offset += x_dim_offsets[dim+1] * !(1 == x_shape[dim]); //if shape is one multiply by 0      
+                y_offset += y_dim_offsets[dim+1] * !(1 == y_shape[dim]);           
+                o_offset += o_dim_offsets[dim+1]; 
+            }
+            x_offset -= x_dim_offsets[dim] * !(1 == x_shape[dim]);        
+            y_offset -= y_dim_offsets[dim] * !(1 == y_shape[dim]);           
+            o_offset -= o_dim_offsets[dim];           
         };
         recurse_broadcasting(0);
     }

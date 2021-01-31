@@ -69,7 +69,6 @@ tensor<T> pow(T x,const tensor<T>& y)
     return pow(tensor<T>(x), y);
 }
 
-
 template <typename T>
 tensor<T> sum(const tensor<T>& x) 
 {
@@ -80,48 +79,6 @@ tensor<T> sum(const tensor<T>& x)
         acc += data_ptr[i];
     }
     return tensor<T>(acc);
-}
-
-template <typename T>
-tensor<T> sum(const tensor<T>& x, std::initializer_list<unsigned int> axis_il) 
-{
-    tensor_shape out_shape = x.shape();
-    tensor_shape x_shape = x.shape();
-    unsigned int max_axis = out_shape.size() - 1;
-    std::vector<unsigned int> axes = axis_il;
-    std::sort(axes.begin(), axes.end());
-    for(const auto& x : axes)
-    {
-        if(x > max_axis)
-        {
-            throw std::runtime_error("axis " + std::to_string(x) + " out of bounds for tensor of dimension " + std::to_string(max_axis + 1));
-        }
-        out_shape[x] = 1;
-    }
-
-    tensor<T> out(out_shape);
-
-    auto x_offsets = x.calculate_dimension_offsets(x_shape);
-
-    std::function<void(std::vector<size_t>&)> print_vec = [](std::vector<size_t>& to_print){for(const auto& x: to_print){std::cout << x << " ";} std::cout << std::endl;};
-    print_vec(x_offsets);
-
-    // for(const auto& axis : axes)
-    // {
-    //     // size_t offset = x_offsets[axis + 1];
-    //     // size_t dim_shape = x_shape[axis];
-    //     // size_t iterations = x_offsets[axis] / dim_shape;
-
-    //     // T* x_data_ptr = x.data();
-
-   // unsinged int axis = 0;
-
-
-        
-    // }
-
-
-    return out;
 }
 
 template <typename T>
@@ -179,6 +136,34 @@ tensor<T> sum(const tensor<T>& x, unsigned int axis)
 
     return out;
 }
+
+template <typename T>
+tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes) 
+{
+    tensor_shape out_shape = x.shape();
+    tensor_shape x_shape = x.shape();
+    unsigned int max_axis = out_shape.size() - 1;
+    //std::vector<unsigned int> axes = axis_il;
+    for(const auto& x : axes)
+    {
+        if(x > max_axis)
+        {
+            throw std::runtime_error("axis " + std::to_string(x) + " out of bounds for tensor of dimension " + std::to_string(max_axis + 1));
+        }
+        out_shape[x] = 1;
+    }
+
+    tensor<T> out = sum(x, axes[0]);
+    axes.erase(axes.begin());
+    
+    for(const auto& axis : axes)
+    {
+        out = sum(out, axis);        
+    }
+    return out;
+}
+
+
 
 // tensor dot(const tensor& a, const tensor& b)
 // {
