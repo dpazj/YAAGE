@@ -41,6 +41,8 @@ class tensor
 
         tensor<T> broadcast(const tensor<T>& other, std::function<T(T&,T&)> operation) const;
         std::vector<size_t> calculate_dimension_offsets(tensor_shape& shape) const;
+        size_t calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets) const;
+
 
 
 
@@ -78,7 +80,6 @@ class tensor
         size_t calculate_size();
 
         //broadcast util functions
-        size_t calculate_offset(std::vector<size_t>& counter, std::vector<size_t>& offsets) const;
 
         //broadcasting functions
         tensor_shape calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_shape) const;

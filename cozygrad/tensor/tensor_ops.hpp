@@ -127,10 +127,6 @@ tensor<T> sum(const tensor<T>& x, std::initializer_list<unsigned int> axis_il)
 template <typename T>
 tensor<T> sum(const tensor<T>& x, unsigned int axis) 
 { 
-    std::function<void(std::vector<size_t>&)> print_vec = [](std::vector<size_t>& to_print){for(const auto& x: to_print){std::cout << x << " ";} std::cout << std::endl;};
-
-
-
     tensor_shape out_shape = x.shape();
     tensor_shape x_shape = x.shape();
 
@@ -148,71 +144,41 @@ tensor<T> sum(const tensor<T>& x, unsigned int axis)
     
     T* x_data = x.data();
 
-    print_vec(x_offsets);
-    print_vec(o_offsets);
-    print_vec(x_shape);
-    print_vec(out_shape);
-    std::cout << std::endl;
-
     size_t out_idx = 0;
-    size_t x_idx = 0;
+    size_t x_offset = 0;
 
-    std::function<void(unsigned int)> test = [&](unsigned int dim)
+    size_t ets = x_shape[axis] / out_shape[axis];
+    size_t ets_offset = axis == max_axis ? 1 : x_offsets[axis + 1];
+    
+    std::function<void(unsigned int)> recursive_sum_dimension = [&](unsigned int dim)
     {
         if(dim == axis)
         {
-            std::cout << "offset" << o_offsets[axis] << std::endl;
-            for(size_t i=0;i<o_offsets[axis];i++)
+            for(size_t i=0; i < o_offsets[axis]; i++)
             {
                 T acc = 0;
-                size_t j_offset = 0;
-                for(size_t j=0; j<8;j++)
+                for(size_t j=0; j < ets; j++)
                 {
-                    acc += x_data[j_offset + x_idx];
-                    std::cout << j_offset + x_idx << std::endl;
-                    j_offset += 6; 
+                    size_t offset = (ets_offset * j) + i + x_offset;
+                    acc += x_data[offset];
                 }
-                std::cout << "Break" << std::endl;
                 out[out_idx] = acc;
                 out_idx++;
-                x_idx++;
             }
-
-
             return;
         }
 
         for(size_t i=0; i<x_shape[dim]; i++)
         {
-            test(dim+1);
+            recursive_sum_dimension(dim+1);
+            x_offset += x_offsets[dim+1];
         }
+        x_offset -= x_offsets[dim];
     };
-    test(0);
+    recursive_sum_dimension(0);
 
     return out;
 }
-
-// j is number of elements we are adding together
-// offset_j is the offset between the numbers we are adding together
-
-// [[[1, 1, 1], [2, 2, 2]], [[3, 3, 3], [4, 4, 4]], [[5, 5, 5], [6, 6, 6]], [[7, 7, 7], [8, 8, 8]]] (4,2,3)
-
-// [[ 3,  6], [ 9, 12], [15, 18], [21, 24]] axis=2 | ets=3 etsoffset=1 i_offset= 0,3,9,12,15,18,21 
-
-// [[ 3,  3,  3], [ 7,  7,  7],[11, 11, 11], [15, 15, 15]] axis=1 | ets=2 etsoffset=3 i_offset= 0,1,2, 6,7,8 , 12,13,14, 18,19,20 
-
-// [[16, 16, 16],[20, 20, 20]] axis=0 ets=4 etsoffset=6 i_offset= 0,1,2,3,4,5 
-
-
-
-
-
-
-
-
-
-
-
 
 // tensor dot(const tensor& a, const tensor& b)
 // {
