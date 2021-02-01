@@ -2,6 +2,7 @@
 
 #include "tensor/tensor.hpp"
 #include "tensor/tensor_ops.hpp"
+#include "tensor/tensor_operators.hpp"
 
 
 

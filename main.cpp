@@ -149,33 +149,74 @@ void sum_test1()
 void sum_test2()
 {
     tensor<double> a = {1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10};
-    a.reshape({5,2,10,1});
+    a.reshape({5,2,2,1,5});
     std::cout << a << std::endl;
     std::cout << std::endl;
     std::cout << op::sum(a,0) << std::endl;
     std::cout << op::sum(a,1) << std::endl;
     std::cout << op::sum(a,2) << std::endl;
     std::cout << op::sum(a,3) << std::endl;
-    std::cout << op::sum(a,{1,2,3}) << std::endl;
+    std::cout << op::sum(a,{4}) << std::endl;
 }
 
 void equals_test()
 {
+    tensor<double> a = {1,2,3,4,5};
+    tensor<double> b = {1,2,3,4,5};
+    tensor<double> c = {1,2,5,4,5};
+
+    std::cout << (a == b) << std::endl;
+    std::cout << (a == c) << std::endl;
+    b.reshape({1,5});
+    std::cout << (a == b) << std::endl;
+}
+
+
+void dot_test1()
+{
+    tensor<double> a = {1,2,3,4,5,6,7,8,9,10,11,12};
+    tensor<double> b = {1,2,3,4,5,6,7,8,9,10,11,12};
+
+    a.reshape({3,4});
+    b.reshape({4,3});
+
+    std::cout << a << std::endl;
+    std::cout << b << std::endl;
+
+    std::cout << op::dot(a,b) << std::endl;
 
 }
 
+void dot_test2()
+{
+    tensor<double> a = {1,2,3,4,5,6,7,8,9};
+    tensor<double> b = {1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2};
+
+    a.reshape({3,3});
+    b.reshape({2,3,3});
+
+    std::cout << a << std::endl;
+    std::cout << b << std::endl;
+
+    std::cout << op::dot(a,b) << std::endl;
+
+}
+
+
 void tensor_test()
 {
-//     broadcasting_test1();
-//     broadcasting_test2();
-//     broadcasting_test3();
-//     broadcasting_test5();
-//     broacasting_test6();
+    // broadcasting_test1();
+    // broadcasting_test2();
+    // broadcasting_test3();
+    // broadcasting_test5();
+    // broacasting_test6();
 
 //     sum_test1();
-    sum_test2();
+    //sum_test2();
 
-    equals_test();
+    // equals_test();
+    dot_test1();
+    //dot_test2();
 
     // std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     // std::vector<char> w_buf(w_data.size() * sizeof(double));

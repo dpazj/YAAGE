@@ -1,6 +1,8 @@
 #pragma once
 
+#include "tensor_broadcasting_utils.hpp"
 #include "tensor.hpp"
+
 
 #include <stdexcept>
 #include <cmath>
@@ -8,6 +10,8 @@
 
 namespace czy{
 namespace op{
+
+
 
 //UNARY OPS
 template <typename T>
@@ -22,9 +26,7 @@ tensor<T> log(const tensor<T>& a)
     return a.unary_operation([](T a){return std::log(a);});
 }
 
-
 //BROADCAST OPS
-
 //max
 template <typename T>
 tensor<T> max(const tensor<T>& x, const tensor<T>& y)
@@ -97,8 +99,8 @@ tensor<T> sum(const tensor<T>& x, unsigned int axis, bool reshape = true) //resh
     out_shape[axis] = 1;
 
     tensor<T> out(out_shape);
-    std::vector<size_t> x_offsets = x.calculate_dimension_offsets(x_shape);
-    std::vector<size_t> o_offsets = x.calculate_dimension_offsets(out_shape);
+    std::vector<size_t> x_offsets = calculate_dimension_offsets(x_shape);
+    std::vector<size_t> o_offsets = calculate_dimension_offsets(out_shape);
     
     T* x_data = x.data();
 
@@ -167,7 +169,7 @@ tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes)
         out = sum(out, axis, false);        
     }
 
-    //hacks - assumes that each dimension's shape is not zero - which it cant be!
+    //this assumes that each dimension's shape is not zero - which it cant be, but might want to change in future!
     tensor_shape new_shape;
     for(const auto& axis : axes)
     {
@@ -184,20 +186,85 @@ tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes)
     return out;
 }
 
-template <typename T>
-tensor<T> unbroadcast(const tensor<T>& x, tensor_shape shape)
-{
-    std::vector<unsigned int> axes_to_sum;
-    auto x_shape = x.shape();
 
-    for(size_t i=0; i<shape.size();i++)
-    {
-        if(shape[i] == 1 && x_shape[i] > 1)
-        {
-            axes_to_sum.push_back((unsigned int) i);
+template <typename T>
+tensor<T> dot(const tensor<T>& x, const tensor<T>& y)
+{
+    auto print_vec = [](tensor_shape to_print){
+        for(const auto& x: to_print){
+            std::cout << x << " ";
         }
-    }
-    return sum(x, axes_to_sum).reshape(shape);
+        std::cout << std::endl;
+    };
+
+    tensor_shape x_shape = x.shape();
+    tensor_shape y_shape = y.shape();
+    tensor_shape out_shape = calculate_dot_broadcast_shape(x_shape,y_shape);
+
+    tensor<T> out(out_shape);
+    print_vec(out_shape);
+
+    size_t M = x_shape[x_shape.size() - 2]; //x rows
+    size_t K = x_shape[x_shape.size() - 1]; //x cols
+    size_t N = y_shape[y_shape.size() - 1]; //y cols
+
+    std::vector<size_t> x_dim_offsets = calculate_dimension_offsets(x_shape);     
+    std::vector<size_t> y_dim_offsets = calculate_dimension_offsets(y_shape);    
+    std::vector<size_t> o_dim_offsets = calculate_dimension_offsets(out_shape);    
+
+    size_t x_offset, y_offset, o_offset; 
+    x_offset = y_offset = o_offset = 0;
+
+    T* x_data = x.data();
+    T* y_data = x.data();
+    T* o_data = out.data();
+
+    std::function<void(unsigned int)> recursive_dot_broadcast = [&](unsigned int dim)
+    {
+        if(dim == out_shape.size() - 2)
+        {
+            size_t tmp_x = 0;
+            size_t tmp_o = 0;
+            for(size_t i=0; i<M;i++)
+            {
+                
+                for (size_t j = 0; j < N; j++)
+                {
+                    T acc = 0.0f;
+                    //size_t tmp_x = K * i;
+
+                    for (size_t k = 0; k < K; k++)
+                    {
+                        acc += x_data[tmp_x + k + x_offset] * y_data[k * N + j + y_offset];
+                    }
+
+                    o_data[tmp_o + j + o_offset] = acc;
+                }
+                tmp_x+=K;
+                tmp_o+=N;
+            }
+            return;
+        }
+
+        for(size_t i=0; i<out_shape[dim]; i++)
+        {
+            recursive_dot_broadcast(dim+1);
+            x_offset += x_dim_offsets[dim+1] * !(1 == x_shape[dim]); //if shape is one multiply by 0      
+            y_offset += y_dim_offsets[dim+1] * !(1 == y_shape[dim]);           
+            o_offset += o_dim_offsets[dim+1]; 
+        }
+        x_offset -= x_dim_offsets[dim] * !(1 == x_shape[dim]);        
+        y_offset -= y_dim_offsets[dim] * !(1 == y_shape[dim]);           
+        o_offset -= o_dim_offsets[dim];     
+    };
+    recursive_dot_broadcast(0);
+
+    
+
+    
+
+
+    return out;
 }
 
 // tensor dot(const tensor& a, const tensor& b)
