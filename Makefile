@@ -5,9 +5,7 @@ CPPFLAGS = $(CFLAGS)
 
 LDFLAGS = 
 
-
 OBJ=main.o \
-	
 
 %.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CPPFLAGS)
@@ -20,11 +18,3 @@ run:
 
 clean:
 	rm -f $(OBJ) main
-
-
-
-
-
-
-
-
