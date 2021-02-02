@@ -5,28 +5,34 @@
 namespace czy{
 
 //class manages allocated memory and in future gpu stuff 
+template <typename T>
 class node;
 
+template <typename T>
 class Session
 {
     public:
-        static Session& get_session()
+
+        static Session<T>& get_session()
         {
-            static Session instance;
+            static Session<T> instance;
             return instance;
         }
 
-        void add_node(node* x);       
+        void add_node(node<T>* x);       
 
-        std::vector<node*> get_session_nodes(){ return m_session_nodes;}
+        std::vector<node<T>*> get_session_nodes(){ return m_session_nodes;}
+
+
     private:
         Session(){}; // Default constructor
         ~Session(){}; // Destructor
 
-        std::vector<node*> m_session_nodes;
+        std::vector<node<T>*> m_session_nodes;
 };
 
-void Session::add_node(node* x)
+template <typename T>
+void Session<T>::add_node(node<T>* x)
 {
     m_session_nodes.push_back(x);       
 }
