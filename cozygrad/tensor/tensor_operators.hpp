@@ -117,10 +117,27 @@ tensor<T> tensor<T>::operator/(const tensor<T>& y)
 }
 
 template <typename T>
+tensor<T> tensor<T>::operator>(const tensor<T>& y)
+{
+    return broadcast(y, [](T& a, T& b){
+        return a>b;
+    });
+}
+template <typename T>
+tensor<T> tensor<T>::operator<(const tensor<T>& y)
+{
+    return broadcast(y, [](T& a, T& b){
+        return a<b;
+    });
+}
+
+
+template <typename T>
 tensor<T> tensor<T>::operator-()
 {
     return unary_operation([](T& a){return -a;});
 }
+
 
 
 }//namespace czy

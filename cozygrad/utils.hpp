@@ -8,9 +8,10 @@ std::mt19937 gen(1337);
 namespace czy{
 namespace utils
 {
-    double get_rand_double(double min, double max)
+    template <typename T>
+    T get_rand_double(T min, T max)
     {
-        std::uniform_real_distribution<double> dis(min, max);
+        std::uniform_real_distribution<T> dis(min, max);
         return dis(gen);
     }
 

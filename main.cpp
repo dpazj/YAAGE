@@ -10,23 +10,25 @@
 
 using namespace czy;
 
-// void sanity_test()
-// {
-//     tensor input = {-4.0};
-//     node x(input);
+void sanity_test()
+{
+    tensor<double> input = {-4.0};
+    node<double> x(input);
 
-//     auto& z = 2 * x + 2 + x;
-//     auto& q = z.relu() + z * x;
-//     auto& h = (z * z).relu();
-//     auto& y = h + q + q * x; 
+    auto& z = 2 * x + 2 + x;
+    auto& q = z.relu() + z * x;
+    auto& h = (z * z).relu();
+    auto& y = h + q + q * x; 
 
-//     graph g(y);
-//     g.forwards();
-//     g.backwards();
+    graph<double> g(y);
+    g.forwards();
+    g.backwards();
 
-//     std::cout << "y should be -20, y = ";   y.data()->print();
-//     std::cout << "dy/dx should be 46, dy/dx = "; x.gradient()->print();
-// }
+    std::cout << "y should be -20, y = " << y.data() << std::endl;
+    std::cout << "dy/dx should be 46, dy/dx = " << x.gradient() << std::endl;
+
+    utils::clean_session<double>();
+}
 
 // void test1()
 // {
@@ -242,9 +244,9 @@ void tensor_test()
 int main()
 {
 
-    tensor_test();
+    //tensor_test();
 
-    //sanity_test();
+    sanity_test();
     //test1();
     //test2();
     //test3();

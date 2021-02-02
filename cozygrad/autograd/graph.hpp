@@ -8,30 +8,32 @@
 
 namespace czy{
 
+template <typename T>
 class graph
 {
 
     public:
-        graph(node& output) : graph(&output){};
-        graph(node * output);
+        graph(node<T>& output) : graph(&output){};
+        graph(node<T>* output);
 
         void forwards();
         void backwards();
         void zero_gradients();
 
-        std::vector<node*> nodes();
+        std::vector<node<T>*> nodes();
 
     private:
-        node* m_output_node;
+        node<T>* m_output_node;
 
-        void populate_exec_order(node* node);
+        void populate_exec_order(node<T>* node);
  
-        std::unordered_set<node*> m_visited;
-        std::vector<node *> m_exec_order;
-        std::vector<node *> m_reverse_exec_order;
+        std::unordered_set<node<T>*> m_visited;
+        std::vector<node<T>*> m_exec_order;
+        std::vector<node<T>*> m_reverse_exec_order;
 };
 
-graph::graph(node * output)
+template <typename T>
+graph<T>::graph(node<T>* output)
 {
     m_output_node = output;
 
@@ -40,9 +42,11 @@ graph::graph(node * output)
     std::reverse(m_reverse_exec_order.begin(), m_reverse_exec_order.end());
 }
 
-std::vector<node*> graph::nodes(){return m_exec_order;};
+template <typename T>
+std::vector<node<T>*> graph<T>::nodes(){return m_exec_order;};
 
-void graph::forwards()
+template <typename T>
+void graph<T>::forwards()
 {
     for(auto& node : m_exec_order)
     {
@@ -50,9 +54,10 @@ void graph::forwards()
     }
 }
 
-void graph::backwards()
+template <typename T>
+void graph<T>::backwards()
 {
-    *m_output_node->gradient() = tensor({1});
+    m_output_node->set_gradient(tensor<T>({1}));
 
     for(auto& node : m_reverse_exec_order)
     {
@@ -60,7 +65,8 @@ void graph::backwards()
     }
 }
 
-void graph::zero_gradients()
+template <typename T>
+void graph<T>::zero_gradients()
 {
     for(auto& node : m_exec_order)
     {
@@ -68,7 +74,8 @@ void graph::zero_gradients()
     }
 }
 
-void graph::populate_exec_order(node* node)
+template <typename T>
+void graph<T>::populate_exec_order(node<T>* node)
 {
     if(m_visited.find(node) == m_visited.end()) //if child not in visited
     {

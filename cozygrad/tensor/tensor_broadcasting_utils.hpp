@@ -5,19 +5,21 @@
 namespace czy{
 
 // template <typename T>
-// tensor<T> unbroadcast(const tensor<T>& x, tensor_shape shape)
+// tensor<T> unbroadcast(const tensor<T>& x, tensor_shape old_shape)
 // {
-//     std::vector<unsigned int> axes_to_sum;
 //     auto x_shape = x.shape();
+//     if(old_shape == x_shape){return x;}
 
-//     for(size_t i=0; i<shape.size();i++)
+//     std::vector<unsigned int> axes_to_sum;
+ 
+//     for(size_t i=0; i<old_shape.size();i++)
 //     {
-//         if(shape[i] == 1 && x_shape[i] > 1)
+//         if(old_shape[i] == 1 && x_shape[i] > 1)
 //         {
 //             axes_to_sum.push_back((unsigned int) i);
 //         }
 //     }
-//     return sum(x, axes_to_sum).reshape(shape);
+//     return sum(x, axes_to_sum).reshape(old_shape);
 // }
 
 
@@ -26,7 +28,7 @@ tensor_shape calculate_dot_broadcast_shape(tensor_shape& x, tensor_shape& y)
 {
     if(x.size() < 2 || y.size() < 2)
     {
-        throw std::runtime_error("Dot: tensors must have a rank of at least 2!");
+        throw std::runtime_error("dot: tensors must have a rank of at least 2!");
     }
 
     if(x[x.size() - 1] != y[y.size() - 2]) //x col != y row

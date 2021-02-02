@@ -56,15 +56,17 @@ class tensor
         
         //operators - defined in tensor operators
         T& operator[](size_t i);
-        tensor<T>& operator=(const tensor<T>& rhs);
-        tensor<T>& operator=(T rhs);
-        bool operator==(const tensor<T>& other);
-        bool operator!=(const tensor<T>& other);
+        tensor<T>& operator=(const tensor<T>& y);
+        tensor<T>& operator=(T y);
+        bool operator==(const tensor<T>& y);
+        bool operator!=(const tensor<T>& y);
 
-        tensor<T> operator+(const tensor<T>& rhs);
-        tensor<T> operator-(const tensor& rhs);
-        tensor<T> operator*(const tensor<T>& rhs);
-        tensor<T> operator/(const tensor<T>& rhs);
+        tensor<T> operator+(const tensor<T>& y);
+        tensor<T> operator-(const tensor& y);
+        tensor<T> operator*(const tensor<T>& y);
+        tensor<T> operator/(const tensor<T>& y);
+        tensor<T> operator>(const tensor<T>& y);
+        tensor<T> operator<(const tensor<T>& y);
     
         tensor<T> operator-();
 

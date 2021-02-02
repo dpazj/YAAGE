@@ -294,7 +294,6 @@ tensor<T> transpose(const tensor<T>& x)
             }
             x_offset += columns;
         }
-        
     }
 
     return out;

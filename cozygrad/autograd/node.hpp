@@ -10,6 +10,7 @@
 
 namespace czy{
 
+template <typename T>
 class node
 {
     public:
@@ -17,17 +18,18 @@ class node
 
         node();
         node(const node& x);
-        node(tensor* x, bool updatable = true);
-        node(tensor& x, bool updatable = true) : node(&x, updatable){};
+        node(tensor<T>* x, bool updatable = true);
+        node(tensor<T>& x, bool updatable = true) : node(&x, updatable){};
         ~node();
 
         void forward();
         void backward();
 
         void add_child(node *);
-        void set_data(tensor* x);
-        tensor* data();
-        tensor* gradient();
+        void set_data(tensor<T>* x);
+        const tensor<T>& data();
+        const tensor<T>& gradient();
+        void set_gradient(const tensor<T>& grad);
         std::vector<node*> children();
     
         bool updatable();
@@ -57,8 +59,8 @@ class node
 
     private:
 
-        tensor* m_data;
-        tensor* m_gradient;
+        tensor<T>* m_data;
+        tensor<T>* m_gradient;
 
         bool m_owns_data = true;
         bool m_owns_gradient = true;
@@ -72,26 +74,30 @@ class node
         node* create_node();
 };
 
-node::node()
+template <typename T>
+node<T>::node()
 {
-    m_data = new tensor();
-    m_gradient = new tensor();
+    m_data = new tensor<T>();
+    m_gradient = new tensor<T>();
 }
 
-node::node(const node& x)
+template <typename T>
+node<T>::node(const node<T>& x)
 {
     *this = x;
 }
 
-node::node(tensor* x, bool updatable)
+template <typename T>
+node<T>::node(tensor<T>* x, bool updatable)
 {
     m_data_updatable = updatable;
     m_owns_data = false;
     m_data = x;
-    m_gradient = new tensor();
+    m_gradient = new tensor<T>();
 }
 
-node::~node()
+template <typename T>
+node<T>::~node()
 {
     if(m_owns_data && m_data != nullptr)
     {
@@ -104,10 +110,14 @@ node::~node()
     }  
 }
 
-// void node::forward(){m_forward();}
-// void node::backward(){m_backward();}
+template <typename T>
+void node<T>::forward(){m_forward();}
 
-void node::set_data(tensor* x)
+template <typename T>
+void node<T>::backward(){m_backward();}
+
+template <typename T>
+void node<T>::set_data(tensor<T>* x)
 {
     if(m_owns_data && m_data != nullptr)
     {
@@ -117,31 +127,40 @@ void node::set_data(tensor* x)
     m_owns_data = false;
 }
 
+template <typename T>
+bool node<T>::updatable(){return m_data_updatable;}
+template <typename T>
+const tensor<T>& node<T>::data(){return *m_data;}
+template <typename T>
+const tensor<T>& node<T>::gradient(){return *m_gradient;}
+template <typename T>
+void node<T>::set_gradient(const tensor<T>& grad){ *m_gradient = grad;}
 
-bool node::updatable(){return m_data_updatable;}
-tensor* node::data(){return m_data;}
-tensor* node::gradient(){return m_gradient;}
-std::vector<node*> node::children(){return m_children;}
 
-void node::add_child(node * x)
+template <typename T>
+std::vector<node<T>*> node<T>::children(){return m_children;}
+
+template <typename T>
+void node<T>::add_child(node<T> * x)
 {
     //copy of refers to itself if it is not a copy
     m_children.push_back(x);
 }
 
-node* node::create_node()
+template <typename T>
+node<T>* node<T>::create_node()
 {
-    node* out = new node();
+    auto out = new node<T>();
 
-    Session& session = Session::get_session();
+    auto& session = Session<T>::get_session();
     session.add_node(out);
 
     return out;
 }
 
 //------------OPERATORS----------------
-
-node& node::operator=(const node& other)
+template <typename T>
+node<T>& node<T>::operator=(const node<T>& other)
 {
     m_data = other.m_data;
     m_gradient = other.m_gradient;
@@ -155,10 +174,10 @@ node& node::operator=(const node& other)
     return *this;
 }
 
-
-node& node::operator+(node& other)
+template <typename T>
+node<T>& node<T>::operator+(node<T>& other)
 {
-    node* out = create_node();
+    node<T>* out = create_node();
 
     out->add_child(this);
     out->add_child(&other);
@@ -179,9 +198,10 @@ node& node::operator+(node& other)
     return *out;
 }
 
-node& node::operator+(double other)
+template <typename T>
+node<T>& node<T>::operator+(double other)
 {
-    node* out = create_node();
+    auto out = create_node();
 
     out->add_child(this);
 
@@ -200,17 +220,22 @@ node& node::operator+(double other)
     return *out;
 }
 
-node& operator+(double other, node& rhs){ return rhs + other;}
+template <typename T>
+node<T>& operator+(double other, node<T>& rhs){ return rhs + other;}
 
+template <typename T>
+node<T>& node<T>::operator-(){ return *this * -1;}
+template <typename T>
+node<T>& node<T>::operator-(node<T>& other){ return *this + (-other);}
+template <typename T>
+node<T>& node<T>::operator-(double other){ return *this + (-other);}
+template <typename T>
+node<T>& operator-(double other, node<T>& rhs){ return (-rhs) + other;}
 
-node& node::operator-(){ return *this * -1;}
-node& node::operator-(node& other){ return *this + (-other);}
-node& node::operator-(double other){ return *this + (-other);}
-node& operator-(double other, node& rhs){ return (-rhs) + other;}
-
-node& node::operator*(node& other)
+template <typename T>
+node<T>& node<T>::operator*(node<T>& other)
 {
-    node* out = create_node();
+    auto out = create_node();
     out->add_child(this);
     out->add_child(&other);
 
@@ -233,9 +258,10 @@ node& node::operator*(node& other)
     return *out;
 }
 
-node& node::operator*(double other)
+template <typename T>
+node<T>& node<T>::operator*(double other)
 {
-    node* out = create_node();
+    auto out = create_node();
     out->add_child(this);
     //out->add_child(&other);
 
@@ -255,40 +281,42 @@ node& node::operator*(double other)
     return *out;
 }
 
-node& operator*(double other, node& node)
+template <typename T>
+node<T>& operator*(double other, node<T>& node)
 {
     return node * other;
 }
 
 //div
-
-node& node::operator/(double other)
+template <typename T>
+node<T>& node<T>::operator/(double other)
 {
     return *this * std::pow(other, -1);
 }
-
-node& node::operator/(node& other)
+template <typename T>
+node<T>& node<T>::operator/(node<T>& other)
 {
     return *this * other.pow(-1);
 }
-
-node& operator/(double other, node& node)
+template <typename T>
+node<T>& operator/(double other, node<T>& node)
 {
     return other * node.pow(-1);
 }
 
 //relu
-node& node::relu()
+template <typename T>
+node<T>& node<T>::relu()
 {
-    node* out = create_node();
+    auto out = create_node();
     out->add_child(this);
 
     std::function<void()> forward = [&, out](){ 
-        *out->m_data = op::max(*m_data, 0.0f);
+        *out->m_data = op::max(*m_data, (T) 0);
     };
 
     std::function<void()> backward = [&, out](){
-        auto a_grad = *out->m_gradient * (*m_data > 0.0f);
+        auto a_grad = *out->m_gradient * (*m_data > 0);
         *m_gradient = m_gradient->size() == 0 ? a_grad : *m_gradient + a_grad;
     };
     out->m_forward = forward;
@@ -298,9 +326,10 @@ node& node::relu()
     return *out;
 }
 
-node& node::dot(node& other)
+template <typename T>
+node<T>& node<T>::dot(node<T>& other)
 {
-    node* out = create_node();
+    auto out = create_node();
 
     out->add_child(this);
     out->add_child(&other);
@@ -325,9 +354,10 @@ node& node::dot(node& other)
     return *out;
 }
 
-node& node::pow(double exponent)
+template <typename T>
+node<T>& node<T>::pow(double exponent)
 {
-    node* out = create_node();
+    auto out = create_node();
     out->add_child(this);
 
     std::function<void()> forward = [&, out, exponent](){ 
@@ -347,9 +377,10 @@ node& node::pow(double exponent)
 }
 
 //this will need to be changed in future to work with more dimensions
-node& node::sum()
+template <typename T>
+node<T>& node<T>::sum()
 {
-    node* out = create_node();
+    auto out = create_node();
     out->add_child(this);
 
     std::function<void()> forward = [&, out](){ 
@@ -359,7 +390,7 @@ node& node::sum()
     std::function<void()> backward = [&, out](){
         //this is the bit that will need changed : )
         double x = out->m_gradient->data()[0];
-        auto der = tensor(m_data->rows(), m_data->columns());
+        auto der = tensor<T>(m_data->shape());
         der.of_value(x);
         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
@@ -372,9 +403,10 @@ node& node::sum()
 }
 
 //this will need to be changed in future to work with more dimensions
-node& node::mean()
+template <typename T>
+node<T>& node<T>::mean()
 {
-    node* out = create_node();
+    auto out = create_node();
     out->add_child(this);
 
     std::function<void()> forward = [&, out](){ 
@@ -384,7 +416,7 @@ node& node::mean()
     std::function<void()> backward = [&, out](){
         //this is the bit that will need changed : )
         double x = out->m_gradient->data()[0] / m_data->size();
-        auto der = tensor(m_data->rows(), m_data->columns());
+        auto der = tensor<T>(m_data->shape());
         der.of_value(x);
         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
@@ -397,9 +429,10 @@ node& node::mean()
 
 }
 
-node& node::exp()
+template <typename T>
+node<T>& node<T>::exp()
 {
-    node* out = create_node();
+    auto out = create_node();
     out->add_child(this);
 
     std::function<void()> forward = [&, out](){ 
@@ -418,9 +451,10 @@ node& node::exp()
     return *out;
 }
 
-node& node::log()
+template <typename T>
+node<T>& node<T>::log()
 {
-    node* out = create_node();
+    auto out = create_node();
     out->add_child(this);
 
     std::function<void()> forward = [&, out](){ 
@@ -439,18 +473,21 @@ node& node::log()
     return *out;
 }
 
-node& node::sigmoid()
+template <typename T>
+node<T>& node<T>::sigmoid()
 {
     return 1 / (1 + (-*this).exp());
 }
 
-node& node::softmax()
+template <typename T>
+node<T>& node<T>::softmax()
 {
     //need to add broadcasting for this to work : )
     return this->exp() / this->exp().sum();
 }
 
-node& node::logsoftmax()
+template <typename T>
+node<T>& node<T>::logsoftmax()
 {
     return this->softmax().log();
 }
