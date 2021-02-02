@@ -30,6 +30,31 @@ void sanity_test()
     utils::clean_session<double>();
 }
 
+void unbroadcast_test()
+{
+    tensor<double> x = {1,2,3,4,5,6,7,8};
+    tensor<double> y = {1,2};
+    x.reshape({4,2,1});
+
+    node<double> a(x);
+    node<double> b(y);
+
+    auto d = (a + b);
+    auto c = d.sum();
+
+    graph<double> g(c);
+    g.forwards();
+    g.backwards();
+
+    std::cout << a.gradient() << std::endl;
+    std::cout << b.gradient() << std::endl;
+    std::cout << c.data() << std::endl;
+    std::cout << d.data() << std::endl;
+
+    utils::clean_session<double>();
+
+}
+
 // void test1()
 // {
 //     tensor* input = new tensor({-4.0});
@@ -245,8 +270,10 @@ int main()
 {
 
     //tensor_test();
+    //sanity_test();
 
-    sanity_test();
+    unbroadcast_test();
+
     //test1();
     //test2();
     //test3();

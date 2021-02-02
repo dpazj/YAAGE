@@ -4,25 +4,6 @@
 
 namespace czy{
 
-// template <typename T>
-// tensor<T> unbroadcast(const tensor<T>& x, tensor_shape old_shape)
-// {
-//     auto x_shape = x.shape();
-//     if(old_shape == x_shape){return x;}
-
-//     std::vector<unsigned int> axes_to_sum;
- 
-//     for(size_t i=0; i<old_shape.size();i++)
-//     {
-//         if(old_shape[i] == 1 && x_shape[i] > 1)
-//         {
-//             axes_to_sum.push_back((unsigned int) i);
-//         }
-//     }
-//     return sum(x, axes_to_sum).reshape(old_shape);
-// }
-
-
 //returns the resulting tensor shape of the broadcast, also prepends x_shape and y_shape with ones
 tensor_shape calculate_dot_broadcast_shape(tensor_shape& x, tensor_shape& y)
 {
@@ -56,8 +37,8 @@ tensor_shape calculate_dot_broadcast_shape(tensor_shape& x, tensor_shape& y)
         out_shape.push_back(std::max(x[i], y[i]));
     }
 
-    out_shape.insert(out_shape.end(), y[y.size() - 1]);
     out_shape.insert(out_shape.end(), x[x.size() - 2]);
+    out_shape.insert(out_shape.end(), y[y.size() - 1]);
 
     return out_shape;
 }

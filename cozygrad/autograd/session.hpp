@@ -21,7 +21,7 @@ class Session
 
         void add_node(node<T>* x);       
 
-        std::vector<node<T>*> get_session_nodes(){ return m_session_nodes;}
+        std::vector<node<T>*>& get_session_nodes(){ return m_session_nodes;}
 
 
     private:

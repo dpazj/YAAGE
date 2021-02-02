@@ -1,31 +1,74 @@
 # cozygrad
 ***Work In Progress ⚠️🔨👷🏻***\
-A cozy header-only autograd engine written from scratch in c++. Cozygrad evaluates directed acyclic graphs and computes their gradients. Graphs are constructed with a simple and easy to use (pytorch like?) API. 
-## example
+
+
+A cozy, header-only machine learning library and autograd engine written from scratch in c++. Cozygrad evaluates directed acyclic graphs and computes their gradients. Graphs are constructed with a simple and easy to use API. A Tensor class is also provided (similar to Numpy Arrays) with broadcasting and axis summation operations.
+
+
+## tensor example
 ```c++
+#include <iostream>
 #include "cozygrad/cozygrad.h"
 using namespace czy;
 
 int main()
 {
-    tensor t = {-8.0};
+    tensor<double> x = { {{1,2},{3,4}}, {{5,6},{7,8}}, {{9,10},{11,12}}};
+    tensor<double> y = {1,2,3,4,5,6};
 
-    node x(t);
-    auto& a = 42 - x;
-    auto& b = a.pow(2) + a;
-    auto& c = b.log() * x;
-    auto& y = -c;
+    x.reshape({3,2,2});
+    y.reshape({3,1,2});
+
+    //broadcasting
+    std::cout << x + y << std::endl;
+    std::cout << op::max(x,y) << std::endl;
+    std::cout << op::pow(x,y) << std::endl;
+
+    tensor<double> z = {16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1};
+
+    x.reshape({3,4});
+    z.reshape({2,4,2});
+    //matrix multiplication broadcasting
+    std::cout << op::dot(x,z) << std::endl;
+
+    std::cout << op::transpose(z) << std::endl; //swaps last and second to last axis
+
+    //axis summation
+    std::cout << op::sum(z) << std::endl;
+    std::cout << op::sum(z,0) << std::endl; //sum an individual axis
+    std::cout << op::sum(z,{1,2}) << std::endl; // or multiple at once!
+    return 0;
+}
+
+```
+
+## autograd example
+```c++
+#include <iostream>
+#include "cozygrad/cozygrad.h"
+using namespace czy;
+
+int main()
+{
+    tensor<double> t = {-8.0};
+
+    node<double> x(t);
+    auto a = 42 - x;
+    auto b = a.pow(2) + a;
+    auto c = b.log() * x;
+    auto y = -c;
 
     //construct a graph
-    graph g(y);
+    graph<double> g(y);
     g.forwards();
     g.backwards();
 
-    y.data()->print(); // 62.7508
-    x.gradient()->print(); // dy/dx -8.16071
+    std::cout << y.data() << std::endl; // 62.7508
+    std::cout << x.gradient() << std::endl; // dy/dx -8.16071
 
     //clean up
-    utils::clean_session();
+    utils::clean_session<double>();
+    return 0;
 }
 ```
 ## pytorch equivalent
@@ -84,6 +127,7 @@ int main()
 
     //clean up
     utils::clean_session();
+    return 0;
 }
 ```
 ## TODO

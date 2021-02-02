@@ -149,6 +149,9 @@ tensor<T> sum(const tensor<T>& x, unsigned int axis, bool reshape = true) //resh
 template <typename T>
 tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes) 
 {
+    if(axes.size() == 0){return x;}
+
+
     tensor_shape out_shape = x.shape();
     tensor_shape x_shape = x.shape();
     unsigned int max_axis = out_shape.size() - 1;
@@ -190,19 +193,11 @@ tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes)
 template <typename T>
 tensor<T> dot(const tensor<T>& x, const tensor<T>& y)
 {
-    auto print_vec = [](tensor_shape to_print){
-        for(const auto& x: to_print){
-            std::cout << x << " ";
-        }
-        std::cout << std::endl;
-    };
-
     tensor_shape x_shape = x.shape();
     tensor_shape y_shape = y.shape();
     tensor_shape out_shape = calculate_dot_broadcast_shape(x_shape,y_shape);
 
     tensor<T> out(out_shape);
-    print_vec(out_shape);
 
     size_t M = x_shape[x_shape.size() - 2]; //x rows
     size_t K = x_shape[x_shape.size() - 1]; //x cols
@@ -271,8 +266,8 @@ tensor<T> transpose(const tensor<T>& x)
     }
 
     tensor_shape out_shape = x_shape;
-    size_t rows = x_shape[x_shape.size()-1];
-    size_t columns = x_shape[x_shape.size()-2];    
+    size_t rows = x_shape[x_shape.size()-2];
+    size_t columns = x_shape[x_shape.size()-1];    
 
     out_shape[out_shape.size()-1] = rows;
     out_shape[out_shape.size()-2] = columns;

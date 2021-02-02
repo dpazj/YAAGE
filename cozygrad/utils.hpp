@@ -2,6 +2,7 @@
 
 #include <random> 
 #include <algorithm>
+#include <iostream>
 
 std::mt19937 gen(1337);
 
@@ -16,8 +17,15 @@ namespace utils
     }
 
 
-    
-
+    template <typename T>
+    void print_vec(const std::vector<T>& vec)
+    {
+        for(const auto& x : vec)
+        {
+            std::cout << x << " ";
+        }
+        std::cout << std::endl;
+    }
     
 
 

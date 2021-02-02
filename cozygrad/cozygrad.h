@@ -20,10 +20,12 @@ namespace utils{
 template <typename T>
 void clean_session(){
     Session<T>& session = Session<T>::get_session();
-        
-    for(auto x : session.get_session_nodes())
+    
+    auto& active_nodes = session.get_session_nodes();
+    while(!active_nodes.empty())
     {
-        delete x;
+        delete active_nodes.back();;
+        active_nodes.pop_back();
     }
 }
 

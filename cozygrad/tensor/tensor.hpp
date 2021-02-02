@@ -254,7 +254,7 @@ void tensor<T>::reshape(tensor_shape new_shape)
     {
         m_shape = old;
         m_size = calculate_size();
-        throw std::runtime_error("New shape not valid!");
+        throw std::runtime_error("reshape: new shape not valid!");
     }
 }
 

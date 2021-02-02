@@ -3,6 +3,7 @@
 #include "session.hpp"
 #include "../tensor/tensor.hpp"
 #include "../tensor/tensor_ops.hpp"
+#include "../utils.hpp"
 
 #include <functional>
 #include <vector>
@@ -58,6 +59,8 @@ class node
         node& logsoftmax();
 
     private:
+
+        tensor<T> unbroadcast(const tensor<T>& x, const tensor_shape& old_shape);
 
         tensor<T>* m_data;
         tensor<T>* m_gradient;
@@ -143,7 +146,6 @@ std::vector<node<T>*> node<T>::children(){return m_children;}
 template <typename T>
 void node<T>::add_child(node<T> * x)
 {
-    //copy of refers to itself if it is not a copy
     m_children.push_back(x);
 }
 
@@ -157,6 +159,38 @@ node<T>* node<T>::create_node()
 
     return out;
 }
+
+
+template <typename T>
+tensor<T> node<T>::unbroadcast(const tensor<T>& x, const tensor_shape& old_shape)
+{
+    auto x_shape =  x.shape();
+    auto old_shape_cpy = old_shape;
+    if(old_shape == x_shape){return x;}
+
+    //prepend with ones to match shapes
+    while(old_shape_cpy.size() < x_shape.size())
+    {
+        old_shape_cpy.insert(old_shape_cpy.begin(), 1);
+    }
+
+    std::vector<unsigned int> axes_to_sum;
+
+    for(size_t i=0; i<old_shape_cpy.size();i++)
+    {
+        
+        if(old_shape_cpy[i] == 1 && x_shape[i] > 1)
+        {
+            axes_to_sum.push_back((unsigned int) i);
+        }
+    }
+    
+    auto out = op::sum(x, axes_to_sum);
+    out.reshape(old_shape);
+
+    return out;
+}
+
 
 //------------OPERATORS----------------
 template <typename T>
@@ -187,8 +221,8 @@ node<T>& node<T>::operator+(node<T>& other)
     };
 
     std::function<void()> backward = [&, out](){
-        *m_gradient = m_gradient->size() == 0 ? *out->m_gradient : *m_gradient + *out->m_gradient;
-        *other.m_gradient = other.m_gradient->size() == 0 ? *out->m_gradient : *other.m_gradient + *out->m_gradient;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(*out->m_gradient, m_data->shape()) : unbroadcast(*m_gradient + *out->m_gradient, m_data->shape());
+        *other.m_gradient = other.m_gradient->size() == 0 ? unbroadcast(*out->m_gradient, other.m_data->shape()) : unbroadcast(*other.m_gradient + *out->m_gradient, other.m_data->shape());
     };
 
     out->m_forward = forward;
@@ -210,7 +244,7 @@ node<T>& node<T>::operator+(double other)
     };
 
     std::function<void()> backward = [&, out, other](){
-        *m_gradient = m_gradient->size() == 0 ? *out->m_gradient : *m_gradient + *out->m_gradient;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(*out->m_gradient, m_data->shape()) : unbroadcast(*m_gradient + *out->m_gradient, m_data->shape());
     };
 
     out->m_forward = forward;
@@ -222,7 +256,6 @@ node<T>& node<T>::operator+(double other)
 
 template <typename T>
 node<T>& operator+(double other, node<T>& rhs){ return rhs + other;}
-
 template <typename T>
 node<T>& node<T>::operator-(){ return *this * -1;}
 template <typename T>
@@ -244,11 +277,12 @@ node<T>& node<T>::operator*(node<T>& other)
     };
 
     std::function<void()> backward = [&, out](){
-        auto a_derivative = *out->m_gradient * *other.m_data;
-        auto b_derivative = *out->m_gradient * *m_data;
+        auto a_grad = *out->m_gradient * *other.m_data;
+        auto b_grad = *out->m_gradient * *m_data;
 
-        *m_gradient = m_gradient->size() == 0 ? a_derivative : *m_gradient + a_derivative;
-        *other.m_gradient = other.m_gradient->size() == 0 ? b_derivative : *other.m_gradient + b_derivative;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
+        *other.m_gradient = other.m_gradient->size() == 0 ? unbroadcast(b_grad, other.m_data->shape()) : unbroadcast(*other.m_gradient + b_grad, other.m_data->shape());
+
     };
 
     out->m_forward = forward;
@@ -263,15 +297,14 @@ node<T>& node<T>::operator*(double other)
 {
     auto out = create_node();
     out->add_child(this);
-    //out->add_child(&other);
 
     std::function<void()> forward = [&, out, other](){ 
         *out->m_data = *m_data * other;
     };
 
     std::function<void()> backward = [&, out, other](){
-        auto a_derivative = *out->m_gradient * other;
-        *m_gradient = m_gradient->size() == 0 ? a_derivative : *m_gradient + a_derivative;
+        auto a_grad = *out->m_gradient * other;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
     };
 
     out->m_forward = forward;
@@ -317,7 +350,7 @@ node<T>& node<T>::relu()
 
     std::function<void()> backward = [&, out](){
         auto a_grad = *out->m_gradient * (*m_data > 0);
-        *m_gradient = m_gradient->size() == 0 ? a_grad : *m_gradient + a_grad;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
     };
     out->m_forward = forward;
     out->m_backward = backward;
@@ -343,8 +376,8 @@ node<T>& node<T>::dot(node<T>& other)
         auto a = op::dot(*out->m_gradient, op::transpose(*other.m_data));    
         auto b = op::dot(op::transpose(*m_data), *out->m_gradient);
 
-        *m_gradient = m_gradient->size() == 0 ? a: *m_gradient + a;
-        *other.m_gradient = other.m_gradient->size() == 0 ? b : *other.m_gradient + b;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a, m_data->shape()) : unbroadcast(*m_gradient + a, m_data->shape());
+        *other.m_gradient = other.m_gradient->size() == 0 ? unbroadcast(b, other.m_data->shape()) : unbroadcast(*other.m_gradient + b, other.m_data->shape());
     };
 
     out->m_forward = forward;
@@ -365,8 +398,8 @@ node<T>& node<T>::pow(double exponent)
     };
 
     std::function<void()> backward = [&, out, exponent](){
-        auto der = *out->m_gradient * op::pow(*m_data, exponent - 1.0f) * exponent;
-        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+        auto a_grad = *out->m_gradient * op::pow(*m_data, exponent - 1.0f) * exponent;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
     };
 
     out->m_forward = forward;
@@ -376,7 +409,7 @@ node<T>& node<T>::pow(double exponent)
     return *out;
 }
 
-//this will need to be changed in future to work with more dimensions
+//this needs to be changed to work with more dimensions
 template <typename T>
 node<T>& node<T>::sum()
 {
@@ -388,10 +421,13 @@ node<T>& node<T>::sum()
     };
 
     std::function<void()> backward = [&, out](){
-        //this is the bit that will need changed : )
+    
         double x = out->m_gradient->data()[0];
-        auto der = tensor<T>(m_data->shape());
+
+        auto shape = m_data->shape();
+        auto der = tensor<T>(shape);
         der.of_value(x);
+        
         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
 
@@ -402,7 +438,7 @@ node<T>& node<T>::sum()
     return *out;
 }
 
-//this will need to be changed in future to work with more dimensions
+//this needs to be changed  to work with more dimensions
 template <typename T>
 node<T>& node<T>::mean()
 {
@@ -414,7 +450,6 @@ node<T>& node<T>::mean()
     };
 
     std::function<void()> backward = [&, out](){
-        //this is the bit that will need changed : )
         double x = out->m_gradient->data()[0] / m_data->size();
         auto der = tensor<T>(m_data->shape());
         der.of_value(x);
@@ -440,8 +475,8 @@ node<T>& node<T>::exp()
     };
 
     std::function<void()> backward = [&, out](){
-        auto der = *out->m_data * *out->m_gradient;
-        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+        auto a_grad = *out->m_data * *out->m_gradient;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
     };
 
     out->m_forward = forward;
@@ -462,8 +497,8 @@ node<T>& node<T>::log()
     };
 
     std::function<void()> backward = [&, out](){
-        auto der = *out->m_gradient / *m_data;
-        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+        auto a_grad = *out->m_gradient / *m_data;
+        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
     };
 
     out->m_forward = forward;
