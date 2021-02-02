@@ -202,6 +202,20 @@ void dot_test2()
 
 }
 
+void transpose_test1()
+{
+    tensor<double> a = {1,2,3,4,5,6,7,8,9};
+    tensor<double> b = {1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2};
+
+    a.reshape({3,3});
+    b.reshape({2,3,3});
+
+    std::cout << a << std::endl;
+    std::cout << b << std::endl;
+
+    std::cout << op::transpose(a) << std::endl;
+    std::cout << op::transpose(b) << std::endl;
+}
 
 void tensor_test()
 {
@@ -215,19 +229,12 @@ void tensor_test()
     //sum_test2();
 
     // equals_test();
-    dot_test1();
-    //dot_test2();
+    // dot_test1();
+    // dot_test2();
 
-    // std::vector<double> w_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-    // std::vector<char> w_buf(w_data.size() * sizeof(double));
-    // std::memcpy(w_buf.data(), w_data.data(), w_data.size() * sizeof(double));
+    transpose_test1();
 
-    // tensor<double> w(w_buf, {16});
-    // std::cout << w << std::endl;
-    // w.reshape({4,2,1,2});
-    // auto t = w.slice(1,4);
-    // std::cout << w << std::endl;
-    // std::cout << t << std::endl;
+
 
 }
 

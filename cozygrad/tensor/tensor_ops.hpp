@@ -216,7 +216,7 @@ tensor<T> dot(const tensor<T>& x, const tensor<T>& y)
     x_offset = y_offset = o_offset = 0;
 
     T* x_data = x.data();
-    T* y_data = x.data();
+    T* y_data = y.data();
     T* o_data = out.data();
 
     std::function<void(unsigned int)> recursive_dot_broadcast = [&](unsigned int dim)
@@ -225,19 +225,17 @@ tensor<T> dot(const tensor<T>& x, const tensor<T>& y)
         {
             size_t tmp_x = 0;
             size_t tmp_o = 0;
+
+            //TODO this should be optimised at somepoint - eigen?
             for(size_t i=0; i<M;i++)
             {
-                
                 for (size_t j = 0; j < N; j++)
                 {
                     T acc = 0.0f;
-                    //size_t tmp_x = K * i;
-
                     for (size_t k = 0; k < K; k++)
                     {
                         acc += x_data[tmp_x + k + x_offset] * y_data[k * N + j + y_offset];
                     }
-
                     o_data[tmp_o + j + o_offset] = acc;
                 }
                 tmp_x+=K;
@@ -258,66 +256,49 @@ tensor<T> dot(const tensor<T>& x, const tensor<T>& y)
         o_offset -= o_dim_offsets[dim];     
     };
     recursive_dot_broadcast(0);
-
-    
-
-    
-
-
     return out;
 }
 
-// tensor dot(const tensor& a, const tensor& b)
-// {
-//     size_t M = a.rows();
-//     size_t K = a.columns();
-//     size_t N = b.columns();
+//treats the tensor as a stack of matricies
+template <typename T>
+tensor<T> transpose(const tensor<T>& x)
+{
+    tensor_shape x_shape = x.shape();
 
-//     if(a.columns() != b.rows())
-//     {
-//         throw std::runtime_error("dot: Matrix a rows != Matrix b columns! got: " + std::to_string(a.columns()) + " and " + std::to_string(b.rows()));
-//     }
-//     tensor c(M,N);
-//     double* a_data = a.data();
-//     double* b_data = b.data();
-//     double* c_data = c.data();
+    if(x_shape.size() < 2)
+    {
+        throw std::runtime_error("transpose: tensor must have a rank of at least 2!");
+    }
 
-//     for(size_t i=0; i<M;i++)
-//     {
-//         for (size_t j = 0; j < N; j++)
-//         {
-//             double acc = 0.0f;
-//             size_t a_offset = K * i;
+    tensor_shape out_shape = x_shape;
+    size_t rows = x_shape[x_shape.size()-1];
+    size_t columns = x_shape[x_shape.size()-2];    
 
-//             for (size_t k = 0; k < K; k++)
-//             {
-//                 acc += a_data[a_offset + k] * b_data[k * N + j];
-//             }
-//             c_data[(i*N) + j] = acc;
-//         }
-//     }
-//     return c;
-// }
+    out_shape[out_shape.size()-1] = rows;
+    out_shape[out_shape.size()-2] = columns;
 
-// tensor transpose(const tensor& a)
-// {
-//     tensor a_t(a.columns(), a.rows());
-//     double* a_t_data = a_t.data();
-//     double* a_data = a.data();
+    tensor<T> out(out_shape);
+    double* x_data = x.data();
+    double* o_data = out.data();
 
-//     size_t rows = a.rows();
-//     size_t columms = a.columns();
+    auto x_offsets = calculate_dimension_offsets(x_shape);
 
-//     for(size_t i=0; i<rows; i++)
-//     {
-//         size_t a_offset = i * columms;
-//         for (size_t j = 0; j < columms; j++)
-//         {
-//             a_t_data[j * rows +  i] = a_data[a_offset + j];
-//         }
-//     }
-//     return a_t;
-// }
+    for(size_t k=0; k<x.size(); k+=x_offsets[x_offsets.size()-2])
+    {
+        size_t x_offset = 0;
+        for(size_t i=0; i<rows; i++)
+        {
+            for (size_t j = 0; j < columns; j++)
+            {
+                o_data[j * rows +  i + k] = x_data[x_offset + j + k];
+            }
+            x_offset += columns;
+        }
+        
+    }
+
+    return out;
+}
 
 }//namespace op
 }//namespace czy
