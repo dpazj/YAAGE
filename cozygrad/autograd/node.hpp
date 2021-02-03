@@ -38,20 +38,24 @@ class node
         //operators
         node& operator=(const node& other);
         node& operator+(node& other);
-        node& operator+(double other);
+        node& operator+(T other);
         node& operator-();
         node& operator-(node& other);
-        node& operator-(double other);
-        node& operator*(double other);
+        node& operator-(T other);
+        node& operator*(T other);
         node& operator*(node& other);
-        node& operator/(double other);
+        node& operator/(T other);
         node& operator/(node& other);
 
         node& relu();
         node& dot(node& other);
-        node& pow(double exponent);
+        node& pow(T exponent);
+
         node& sum();
-        node& mean();
+        node& sum(std::vector<unsigned int> axes);
+        node& sum(unsigned int axis);
+        //node& mean();
+
         node& exp();
         node& log();
         node& sigmoid();
@@ -233,7 +237,7 @@ node<T>& node<T>::operator+(node<T>& other)
 }
 
 template <typename T>
-node<T>& node<T>::operator+(double other)
+node<T>& node<T>::operator+(T other)
 {
     auto out = create_node();
 
@@ -255,15 +259,15 @@ node<T>& node<T>::operator+(double other)
 }
 
 template <typename T>
-node<T>& operator+(double other, node<T>& rhs){ return rhs + other;}
+node<T>& operator+(T other, node<T>& rhs){ return rhs + other;}
 template <typename T>
 node<T>& node<T>::operator-(){ return *this * -1;}
 template <typename T>
 node<T>& node<T>::operator-(node<T>& other){ return *this + (-other);}
 template <typename T>
-node<T>& node<T>::operator-(double other){ return *this + (-other);}
+node<T>& node<T>::operator-(T other){ return *this + (-other);}
 template <typename T>
-node<T>& operator-(double other, node<T>& rhs){ return (-rhs) + other;}
+node<T>& operator-(T other, node<T>& rhs){ return (-rhs) + other;}
 
 template <typename T>
 node<T>& node<T>::operator*(node<T>& other)
@@ -293,7 +297,7 @@ node<T>& node<T>::operator*(node<T>& other)
 }
 
 template <typename T>
-node<T>& node<T>::operator*(double other)
+node<T>& node<T>::operator*(T other)
 {
     auto out = create_node();
     out->add_child(this);
@@ -315,14 +319,14 @@ node<T>& node<T>::operator*(double other)
 }
 
 template <typename T>
-node<T>& operator*(double other, node<T>& node)
+node<T>& operator*(T other, node<T>& node)
 {
     return node * other;
 }
 
 //div
 template <typename T>
-node<T>& node<T>::operator/(double other)
+node<T>& node<T>::operator/(T other)
 {
     return *this * std::pow(other, -1);
 }
@@ -332,7 +336,7 @@ node<T>& node<T>::operator/(node<T>& other)
     return *this * other.pow(-1);
 }
 template <typename T>
-node<T>& operator/(double other, node<T>& node)
+node<T>& operator/(T other, node<T>& node)
 {
     return other * node.pow(-1);
 }
@@ -350,7 +354,7 @@ node<T>& node<T>::relu()
 
     std::function<void()> backward = [&, out](){
         auto a_grad = *out->m_gradient * (*m_data > 0);
-        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
+        *m_gradient = m_gradient->size() == 0 ? a_grad : *m_gradient + a_grad;
     };
     out->m_forward = forward;
     out->m_backward = backward;
@@ -388,7 +392,7 @@ node<T>& node<T>::dot(node<T>& other)
 }
 
 template <typename T>
-node<T>& node<T>::pow(double exponent)
+node<T>& node<T>::pow(T exponent)
 {
     auto out = create_node();
     out->add_child(this);
@@ -409,7 +413,7 @@ node<T>& node<T>::pow(double exponent)
     return *out;
 }
 
-//this needs to be changed to work with more dimensions
+
 template <typename T>
 node<T>& node<T>::sum()
 {
@@ -420,49 +424,85 @@ node<T>& node<T>::sum()
         *out->m_data = op::sum(*m_data);
     };
 
-    std::function<void()> backward = [&, out](){
-    
-        double x = out->m_gradient->data()[0];
-
-        auto shape = m_data->shape();
-        auto der = tensor<T>(shape);
-        der.of_value(x);
-        
+    std::function<void()> backward = [&, out](){ 
+        auto x_shape = m_data->shape();
+        auto der = tensor<T>(x_shape);
+        der.zeros();
+        der = der + *out->m_gradient;
         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
     };
 
     out->m_forward = forward;
     out->m_backward = backward;
     out->name = "sum";
-
     return *out;
 }
 
-//this needs to be changed  to work with more dimensions
 template <typename T>
-node<T>& node<T>::mean()
+node<T>& node<T>::sum(std::vector<unsigned int> axes)
 {
     auto out = create_node();
     out->add_child(this);
 
-    std::function<void()> forward = [&, out](){ 
-        *out->m_data = op::sum(*m_data) / m_data->size();
+    std::function<void()> forward = [&, out, axes](){ 
+        *out->m_data = op::sum(*m_data, axes);
     };
 
-    std::function<void()> backward = [&, out](){
-        double x = out->m_gradient->data()[0] / m_data->size();
-        auto der = tensor<T>(m_data->shape());
-        der.of_value(x);
-        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+    std::function<void()> backward = [&, out, axes](){ 
+        auto x_shape = m_data->shape();
+        auto zeros = tensor<T>(x_shape);
+        zeros.zeros();
+        auto reshaped_grad = *out->m_gradient;
+
+        //need to reverse the removing of dimensions that the sum operation does
+        for(const auto& axis : axes)
+        {
+            x_shape[axis] = 1;
+        }
+        
+        reshaped_grad.reshape(x_shape);
+
+        auto grad = reshaped_grad + zeros;
+        *m_gradient = m_gradient->size() == 0 ? grad : *m_gradient + grad;
     };
 
     out->m_forward = forward;
     out->m_backward = backward;
-    out->name = "mean";
-
+    out->name = "sum";
     return *out;
-
 }
+
+template <typename T>
+node<T>& node<T>::sum(unsigned int axis)
+{
+    std::vector<unsigned int> axes = {axis};
+    return this->sum(axes);
+}
+
+// //this needs to be changed  to work with more dimensions
+// template <typename T>
+// node<T>& node<T>::mean()
+// {
+//     auto out = create_node();
+//     out->add_child(this);
+
+//     std::function<void()> forward = [&, out](){ 
+//         *out->m_data = op::mean(*m_data);
+//     };
+
+//     std::function<void()> backward = [&, out](){
+//         double x = out->m_gradient->data()[0] / m_data->size();
+//         auto der = tensor<T>(m_data->shape());
+//         der.of_value(x);
+//         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+//     };
+
+//     out->m_forward = forward;
+//     out->m_backward = backward;
+//     out->name = "mean";
+
+//     return *out;
+// }
 
 template <typename T>
 node<T>& node<T>::exp()
@@ -476,7 +516,7 @@ node<T>& node<T>::exp()
 
     std::function<void()> backward = [&, out](){
         auto a_grad = *out->m_data * *out->m_gradient;
-        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
+        *m_gradient = m_gradient->size() == 0 ? a_grad : *m_gradient + a_grad;
     };
 
     out->m_forward = forward;
@@ -498,7 +538,7 @@ node<T>& node<T>::log()
 
     std::function<void()> backward = [&, out](){
         auto a_grad = *out->m_gradient / *m_data;
-        *m_gradient = m_gradient->size() == 0 ? unbroadcast(a_grad, m_data->shape()) : unbroadcast(*m_gradient + a_grad, m_data->shape());
+        *m_gradient = m_gradient->size() == 0 ? a_grad : *m_gradient + a_grad;
     };
 
     out->m_forward = forward;

@@ -107,7 +107,7 @@ tensor<T> sum(const tensor<T>& x, unsigned int axis, bool reshape = true) //resh
     size_t out_idx = 0;
     size_t x_offset = 0;
 
-    size_t ets = x_shape[axis] / out_shape[axis];
+    size_t ets = x_shape[axis];
     size_t ets_offset = axis == max_axis ? 1 : x_offsets[axis + 1];
     
     std::function<void(unsigned int)> recursive_sum_dimension = [&](unsigned int dim)
@@ -151,7 +151,6 @@ tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes)
 {
     if(axes.size() == 0){return x;}
 
-
     tensor_shape out_shape = x.shape();
     tensor_shape x_shape = x.shape();
     unsigned int max_axis = out_shape.size() - 1;
@@ -187,6 +186,31 @@ tensor<T> sum(const tensor<T>& x, std::vector<unsigned int> axes)
     }
     out.reshape(new_shape);
     return out;
+}
+
+template <typename T>
+tensor<T> mean(const tensor<T>& x)
+{
+    return sum(x) / x.size();
+}
+
+template <typename T>
+tensor<T> mean(const tensor<T>& x, unsigned int axis) 
+{
+    return sum(x, axis) / x.shape()[axis];
+}
+
+
+template <typename T>
+tensor<T> mean(const tensor<T>& x, std::vector<unsigned int> axes) 
+{
+    auto x_shape = x.shape();
+    size_t div = 1;
+    for(const auto& axis : axes)
+    {
+        div *= x_shape[axis];
+    }
+    return sum(x, axes) / div;
 }
 
 

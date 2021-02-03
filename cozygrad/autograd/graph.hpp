@@ -57,6 +57,12 @@ void graph<T>::forwards()
 template <typename T>
 void graph<T>::backwards()
 {
+
+    if(m_output_node->data().size() != 1)
+    {
+        throw std::runtime_error("backwards: gradient can only be implicitly created for scalar outputs");
+    }
+
     m_output_node->set_gradient(tensor<T>({1}));
 
     for(auto& node : m_reverse_exec_order)

@@ -15,7 +15,7 @@ void sanity_test()
     tensor<double> input = {-4.0};
     node<double> x(input);
 
-    auto& z = 2 * x + 2 + x;
+    auto& z = 2.0 * x + 2.0 + x;
     auto& q = z.relu() + z * x;
     auto& h = (z * z).relu();
     auto& y = h + q + q * x; 
@@ -32,6 +32,9 @@ void sanity_test()
 
 void unbroadcast_test()
 {
+
+
+
     tensor<double> x = {1,2,3,4,5,6,7,8};
     tensor<double> y = {1,2};
     x.reshape({4,2,1});
@@ -39,17 +42,18 @@ void unbroadcast_test()
     node<double> a(x);
     node<double> b(y);
 
-    auto d = (a + b);
-    auto c = d.sum();
 
-    graph<double> g(c);
+    auto d = (a + b).sum(1);
+    auto e = d.sum();
+
+    graph<double> g(e);
     g.forwards();
     g.backwards();
 
     std::cout << a.gradient() << std::endl;
     std::cout << b.gradient() << std::endl;
-    std::cout << c.data() << std::endl;
     std::cout << d.data() << std::endl;
+    std::cout << e.data() << std::endl;
 
     utils::clean_session<double>();
 
@@ -261,14 +265,10 @@ void tensor_test()
 
     transpose_test1();
 
-
-
 }
-
 
 int main()
 {
-
     //tensor_test();
     //sanity_test();
 
