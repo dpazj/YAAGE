@@ -8,6 +8,8 @@
 
 #include "cozygrad/cozygrad.h"
 
+#include "examples/moonnet.hpp"
+
 using namespace czy;
 
 void sanity_test()
@@ -33,15 +35,12 @@ void sanity_test()
 void unbroadcast_test()
 {
 
-
-
     tensor<double> x = {1,2,3,4,5,6,7,8};
     tensor<double> y = {1,2};
     x.reshape({4,2,1});
 
     node<double> a(x);
     node<double> b(y);
-
 
     auto d = (a + b).sum(1);
     auto e = d.sum();
@@ -267,34 +266,19 @@ void tensor_test()
 }
 
 
-class IA
-{
-    public:
-        virtual ~IA(){std::cout << "IA destructor" << std::endl;}
-};
-
-class A : public IA
-{
-    public:
-        ~A()
-        {
-            std::cout << "A destructor" << std::endl;
-        }
-};
 
 int main()
 {
+
+
+    do_moon();
     //tensor_test();
     //sanity_test();
 
     //unbroadcast_test();
 
 
-    A* a = new A();
-
-    IA* b = a;
-
-    delete b;
+   
 
     //test1();
     //test2();

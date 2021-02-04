@@ -131,9 +131,10 @@ int main()
 }
 ```
 ## TODO
-* Batch training - need n dimension tensor with broadcasting - fun
-* Get MNIST working & training properly. - need to add batching as above
-* GPU support!
+* Split operation on tensor to make a 'view' to the data rather than copy
+* fast matmul - Eigen?
+* Unit Testing - google test?
+* GPU support - opencl or maybe cuda?! 
 * Optimize
 
 

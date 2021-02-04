@@ -30,7 +30,13 @@ class node
         void set_data(tensor<T>* x);
         const tensor<T>& data();
         const tensor<T>& gradient();
+
+
         void set_gradient(const tensor<T>& grad);
+        void set_data(const tensor<T>& data);
+        tensor<T>& get_gradient();
+        tensor<T>& get_data();
+
         std::vector<node*> children();
     
         bool updatable();
@@ -143,8 +149,18 @@ template <typename T>
 const tensor<T>& node<T>::data(){return *m_data;}
 template <typename T>
 const tensor<T>& node<T>::gradient(){return *m_gradient;}
+
+
 template <typename T>
 void node<T>::set_gradient(const tensor<T>& grad){ *m_gradient = grad;}
+template <typename T>
+void node<T>::set_data(const tensor<T>& data){ *m_data = data;}
+
+template <typename T>
+tensor<T>& node<T>::get_gradient(){return *m_gradient;}
+
+template <typename T>
+tensor<T>& node<T>::get_data(){return *m_data;}
 
 
 template <typename T>
@@ -596,7 +612,7 @@ node<T>& node<T>::log()
 template <typename T>
 node<T>& node<T>::sigmoid()
 {
-    return 1 / (1 + (-*this).exp());
+    return (T )1 / ( (T) 1 + (-*this).exp());
 }
 
 template <typename T>

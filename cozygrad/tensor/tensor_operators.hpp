@@ -97,7 +97,7 @@ tensor<T> tensor<T>::operator*(const tensor<T>& y)
 template <typename T>
 tensor<T> operator*(T x, const tensor<T>& y)
 {
-    return y * x;
+    return tensor<T>(x) * y;
 }
 
 // //dividing

@@ -21,12 +21,13 @@ class tensor
 {
     public:
         tensor();
-        tensor(T x); 
+        tensor(const T& x); 
         tensor(const tensor& x);
         tensor(tensor_shape& shape);
 
-        tensor(std::vector<char>& buf, std::initializer_list<size_t> shape) : tensor(buf, tensor_shape(shape)){};
+        //tensor(std::vector<char>& buf, std::initializer_list<size_t> shape) : tensor(buf, tensor_shape(shape)){};
         tensor(std::vector<char>& buf, tensor_shape shape);
+        tensor(std::vector<T>& buf, tensor_shape shape);
 
         tensor(std::initializer_list<T> il);
         tensor(std::initializer_list<std::initializer_list<T>> il);
@@ -100,7 +101,7 @@ tensor<T>::tensor() : m_shape()
 }
 
 template <typename T>
-tensor<T>::tensor(T x)
+tensor<T>::tensor(const T& x)
 {
     m_shape = {1};
     m_size = 1;
@@ -136,6 +137,22 @@ tensor<T>::tensor(std::vector<char>& buf, tensor_shape shape)
     }
     std::memcpy(m_data, buf.data(),buf.size());
 }
+
+template <typename T>
+tensor<T>::tensor(std::vector<T>& buf, tensor_shape shape)
+{
+    m_shape = shape;
+    m_size = calculate_size();
+    m_data = new T[m_size];
+
+    if(buf.size() != m_size)
+    {
+        throw std::runtime_error("Buffer size does not match size given by shape!");
+    }
+
+    std::memcpy(m_data, buf.data(),buf.size());
+}
+
 
 template <typename T>
 tensor<T>::tensor(std::initializer_list<T> il)
@@ -266,7 +283,7 @@ tensor<T> tensor<T>::slice(int start, int end)
     size_t end_idx = end; 
     if(end == -1){ end_idx = m_shape.front();}
 
-    if(start_idx > m_shape.front() || end_idx > m_shape.front()){throw std::runtime_error("Slice index out of range!");}
+    if(start_idx > m_shape.front() || end_idx > m_shape.front()){throw std::runtime_error("Slice index out of range! Got start = " + std::to_string(start) + " end = " + std::to_string(end) );}
     if(start_idx == end_idx){throw std::runtime_error("Slice start index cannot equal slice end index!");}
     if(start_idx > end_idx){throw std::runtime_error("Slice start index cannot be greater than slice end index!");}
 

@@ -8,9 +8,9 @@
 #include "autograd/graph.hpp"
 #include "autograd/session.hpp"
 
-// #include "nn/model.hpp"
-// #include "nn/optim.hpp"
-// #include "nn/loss_functions.hpp"
+#include "nn/model.hpp"
+#include "nn/optim.hpp"
+#include "nn/loss_functions.hpp"
 #include "utils.hpp"
 
 

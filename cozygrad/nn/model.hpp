@@ -12,31 +12,33 @@
 
 namespace czy{
 
+template<typename T>
 class model
 {
     public: 
         ~model();
 
-        void train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, unsigned int epochs, std::function<node&(node&,node&)> loss_fn);
-        void evaluate(std::vector<tensor>& x_test, std::vector<tensor>& y_test);
+        void train(tensor<T>& x_train, tensor<T>& y_train, optimizer<T>& optim, size_t BATCH_SIZE, unsigned int epochs, std::function<node<T>&(node<T>&,node<T>&)> loss_fn);
+        //void evaluate(std::vector<tensor>& x_test, std::vector<tensor>& y_test);
 
 
-        virtual node& create_model() = 0;
+        virtual node<T>& create_model() = 0;
 
     protected:
         //model builder api
-        node& create_input_node();
-        node& create_model_param(size_t m, size_t n); //shape
+        node<T>& create_input_node();
+        node<T>& create_model_param(tensor_shape); //shape
 
     private:
-        std::vector<tensor*> m_model_parameters;
-        node* m_input_node = nullptr;
-        node* m_model = nullptr;
+        std::vector<tensor<T>*> m_model_parameters;
+        node<T>* m_input_node = nullptr;
+        node<T>* m_model = nullptr;
 
-        std::function<node&(node&,node&)> m_loss_fn;
+        std::function<node<T>&(node<T>&,node<T>&)> m_loss_fn;
 };
 
-model::~model()
+template<typename T>
+model<T>::~model()
 {
     for(const auto& x : m_model_parameters)
     {
@@ -44,11 +46,12 @@ model::~model()
     }
 }
 
-node& model::create_input_node()
+template<typename T>
+node<T>& model<T>::create_input_node()
 {
-    node* input = new node();
+    node<T>* input = new node<T>();
 
-    Session& session = Session::get_session();
+    auto& session = Session<T>::get_session();
     session.add_node(input);
 
     m_input_node = input;
@@ -57,43 +60,56 @@ node& model::create_input_node()
     return *input;
 }
 
-node& model::create_model_param(size_t m, size_t n)
+template<typename T>
+node<T>& model<T>::create_model_param(tensor_shape shape)
 {
-    tensor* param = new tensor(m,n);
+    tensor<T>* param = new tensor<T>(shape);
     param->random(-1.0f,1.0f); // initialises the parameters to random (-1, 1) 
     m_model_parameters.push_back(param);
 
-    node* out = new node(param);
+    node<T>* out = new node<T>(param);
 
-    Session& session = Session::get_session();
+    auto& session = Session<T>::get_session();
     session.add_node(out);
 
     return *out;
 }
 
-void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, optimizer& optim, unsigned int epochs, std::function<node&(node&,node&)> loss_fn)
+template<typename T>
+void model<T>::train(tensor<T>& x_train, tensor<T>& y_train, optimizer<T>& optim, size_t BATCH_SIZE, unsigned int EPOCHS, std::function<node<T>&(node<T>&,node<T>&)> loss_fn)
 {
     std::cout << "started training" << std::endl;
+
+
     auto& model = create_model();
+    node<T> label;
 
     m_model = &model;
     m_loss_fn = loss_fn;
 
-    node label;
-
     auto& loss = loss_fn(label, model);
-    graph g(loss);
+    graph<T> g(loss);
+
+    size_t end = 0;
+  
+    size_t samples = x_train.shape()[0];
 
 
-    for(size_t k=0; k < epochs; k++){
+    for(size_t k=0; k < EPOCHS; k++){
         std::cout << "start epoch " << k + 1 << std::endl;
-        tensor av_loss = {0};
+        tensor<T> av_loss = {0};
 
-        for(size_t i=0; i < x_train.size();i++)
+        for(size_t i=0; i < samples; i+=BATCH_SIZE)
         {
             //std::cout << "\r" << i << "/" << x_train.size();
-            m_input_node->set_data(&x_train[i]);
-            label.set_data(&y_train[i]);
+            end+=BATCH_SIZE;
+            if(end > samples-1){end = samples-1;}
+
+            auto batch_x = x_train.slice(i, end); 
+            auto batch_y = y_train.slice(i, end); 
+            
+            m_input_node->set_data(&batch_x);
+            label.set_data(&batch_y);
 
             g.forwards();
             g.backwards();
@@ -101,43 +117,44 @@ void model::train(std::vector<tensor>& x_train, std::vector<tensor>& y_train, op
             g.zero_gradients();
 
             //stats
-            av_loss = av_loss + *loss.data();
+            av_loss = av_loss + loss.data();
+
         }
-        std::cout << "epoch " + std::to_string(k + 1) +" average loss: " << av_loss.data()[0] / x_train.size() << std::endl;
+        std::cout << "epoch " + std::to_string(k + 1) + " average loss: " << av_loss / samples << std::endl;
     }
 }
 
-void model::evaluate(std::vector<tensor>& x_test, std::vector<tensor>& y_test)
-{
-    if(m_model == nullptr)
-    {
-        throw std::runtime_error("Model has not been trained yet : )");
-    }
+// void model::evaluate(std::vector<tensor>& x_test, std::vector<tensor>& y_test)
+// {
+//     if(m_model == nullptr)
+//     {
+//         throw std::runtime_error("Model has not been trained yet : )");
+//     }
 
-    auto& model = *m_model;
-    node label;
-    tensor av_loss = {0};
-
-
-    auto& loss = m_loss_fn(label, model);
-
-    graph g(loss);
+//     auto& model = *m_model;
+//     node label;
+//     tensor av_loss = {0};
 
 
-    for(size_t i=0; i < x_test.size();i++)
-    {
-        m_input_node->set_data(&x_test[i]);
-        label.set_data(&y_test[i]);
-        g.forwards();
+//     auto& loss = m_loss_fn(label, model);
 
-        av_loss = av_loss + *loss.data();
+//     graph g(loss);
+
+
+//     for(size_t i=0; i < x_test.size();i++)
+//     {
+//         m_input_node->set_data(&x_test[i]);
+//         label.set_data(&y_test[i]);
+//         g.forwards();
+
+//         av_loss = av_loss + *loss.data();
         
-        //stats
-    }
+//         //stats
+//     }
 
-    std::cout << "Evaluation average loss: " << av_loss.data()[0] / x_test.size() << std::endl;
+//     std::cout << "Evaluation average loss: " << av_loss.data()[0] / x_test.size() << std::endl;
         
-}
+// }
 
 }//namespace czy
 

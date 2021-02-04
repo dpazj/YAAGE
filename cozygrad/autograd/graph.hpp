@@ -74,9 +74,9 @@ void graph<T>::backwards()
 template <typename T>
 void graph<T>::zero_gradients()
 {
-    for(auto& node : m_exec_order)
+    for(auto x : m_exec_order)
     {
-        node->gradient()->zeros(); 
+        x->get_gradient().zeros(); 
     }
 }
 
