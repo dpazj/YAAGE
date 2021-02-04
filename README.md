@@ -89,28 +89,29 @@ print(x.grad) # dy/dx -8.1607
 
 ```
 ## constructing a neural network
-Simply extend the model class and implement the create_model function
+Simply inherit the model class and implement the create_model function
 ```c++
 #include "cozygrad/cozygrad.h"
 using namespace czy;
 
-class MyNet : public model
+template <typename T>
+class MyNet : public model<T>
 {
-    node& create_model()
+    node<T>& create_model()
     {
-        auto& input = create_input_node();
+        auto& input = this->create_input_node();
 
-        auto& w1 = create_model_param(2,16);
-        auto& w2 = create_model_param(16,16);
-        auto& w3 = create_model_param(16,1);
+        auto& w1 = this->create_model_param({2,16});
+        auto& w2 = this->create_model_param({16,16});
+        auto& w3 = this->create_model_param({16,1});
 
-        auto& b1 = create_model_param(1,16);
-        auto& b2 = create_model_param(1,16);
-        auto& b3 = create_model_param(1,1);
+        auto& b1 = this->create_model_param({1,16});
+        auto& b2 = this->create_model_param({1,16});
+        auto& b3 = this->create_model_param({1,1});
 
         auto& l1 = (input.dot(w1) + b1).relu(); //layer 1
         auto& l2 = (l1.dot(w2) + b2).relu(); //layer 2
-        auto& l3 = (l2.dot(w3) + b3); //layer 3
+        auto& l3 = (l2.dot(w3) + b3).sigmoid(); //layer 3
         
         return l3;
     }
@@ -121,9 +122,11 @@ int main()
     //... code to get dataset X and y...
     double learning_rate = 0.05;
     unsigned int epoch = 25;
-    SDG optim(learning_rate);
-    MyNet model;
-    model.train(X,y, optim, epoch, loss::hinge);
+    size_t batch_size = 128;
+    SDG<double> optim(learning_rate);
+    MyNet<double> model;
+    model.train(X,y, optim, batch_size,epoch, loss::binary_cross_entropy<double>);
+    model.evaluate(X_test,y_test);
 
     //clean up
     utils::clean_session();
