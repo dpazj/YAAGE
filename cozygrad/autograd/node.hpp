@@ -54,7 +54,10 @@ class node
         node& sum();
         node& sum(std::vector<unsigned int> axes);
         node& sum(unsigned int axis);
-        //node& mean();
+        
+        node& mean();
+        node& mean(std::vector<unsigned int> axes);
+        node& mean(unsigned int axis);
 
         node& exp();
         node& log();
@@ -479,30 +482,72 @@ node<T>& node<T>::sum(unsigned int axis)
     return this->sum(axes);
 }
 
-// //this needs to be changed  to work with more dimensions
-// template <typename T>
-// node<T>& node<T>::mean()
-// {
-//     auto out = create_node();
-//     out->add_child(this);
+template <typename T>
+node<T>& node<T>::mean()
+{
+    auto out = create_node();
+    out->add_child(this);
 
-//     std::function<void()> forward = [&, out](){ 
-//         *out->m_data = op::mean(*m_data);
-//     };
+    std::function<void()> forward = [&, out](){ 
+        *out->m_data = op::mean(*m_data);
+    };
 
-//     std::function<void()> backward = [&, out](){
-//         double x = out->m_gradient->data()[0] / m_data->size();
-//         auto der = tensor<T>(m_data->shape());
-//         der.of_value(x);
-//         *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
-//     };
+    std::function<void()> backward = [&, out](){
+        auto x_shape = m_data->shape();
+        auto zeros = tensor<T>(x_shape);
+        zeros.zeros();
+        auto der = zeros + (*out->m_gradient / m_data->size());
+        *m_gradient = m_gradient->size() == 0 ? der : *m_gradient + der;
+    };
 
-//     out->m_forward = forward;
-//     out->m_backward = backward;
-//     out->name = "mean";
+    out->m_forward = forward;
+    out->m_backward = backward;
+    out->name = "mean";
 
-//     return *out;
-// }
+    return *out;
+}
+
+template <typename T>
+node<T>& node<T>::mean(std::vector<unsigned int> axes)
+{
+    auto out = create_node();
+    out->add_child(this);
+
+    std::function<void()> forward = [&, out, axes](){ 
+        *out->m_data = op::sum(*m_data, axes);
+    };
+
+    std::function<void()> backward = [&, out, axes](){ 
+        auto x_shape = m_data->shape();
+        auto zeros = tensor<T>(x_shape);
+        zeros.zeros();
+        auto reshaped_grad = *out->m_gradient;
+
+        //need to reverse the removing of dimensions that the sum operation does
+        size_t acc = 1;
+        for(const auto& axis : axes)
+        {
+            acc *= x_shape[axis];
+            x_shape[axis] = 1;
+        }
+        
+        reshaped_grad.reshape(x_shape);
+        auto grad = (reshaped_grad + zeros) / acc;
+        *m_gradient = m_gradient->size() == 0 ? grad : *m_gradient + grad;
+    };
+
+    out->m_forward = forward;
+    out->m_backward = backward;
+    out->name = "sum";
+    return *out;
+}
+
+template <typename T>
+node<T>& node<T>::mean(unsigned int axis)
+{
+    std::vector<unsigned int> axes = {axis};
+    return this->mean(axes);
+}
 
 template <typename T>
 node<T>& node<T>::exp()
@@ -557,7 +602,6 @@ node<T>& node<T>::sigmoid()
 template <typename T>
 node<T>& node<T>::softmax()
 {
-    //need to add broadcasting for this to work : )
     return this->exp() / this->exp().sum();
 }
 

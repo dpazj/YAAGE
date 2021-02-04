@@ -264,15 +264,37 @@ void tensor_test()
     // dot_test2();
 
     transpose_test1();
-
 }
+
+
+class IA
+{
+    public:
+        virtual ~IA(){std::cout << "IA destructor" << std::endl;}
+};
+
+class A : public IA
+{
+    public:
+        ~A()
+        {
+            std::cout << "A destructor" << std::endl;
+        }
+};
 
 int main()
 {
     //tensor_test();
     //sanity_test();
 
-    unbroadcast_test();
+    //unbroadcast_test();
+
+
+    A* a = new A();
+
+    IA* b = a;
+
+    delete b;
 
     //test1();
     //test2();
