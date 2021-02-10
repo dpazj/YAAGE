@@ -90,7 +90,7 @@ void model<T>::train(tensor<T>& x_train, tensor<T>& y_train, optimizer<T>& optim
     auto& loss = loss_fn(label, model);
     graph<T> g(loss);
 
-    size_t end = 0;
+    size_t end;
   
     size_t samples = x_train.shape()[0];
 
@@ -99,11 +99,12 @@ void model<T>::train(tensor<T>& x_train, tensor<T>& y_train, optimizer<T>& optim
         std::cout << "start epoch " << k + 1 << std::endl;
         tensor<T> av_loss = {0};
 
+        end = 0;
         for(size_t i=0; i < samples; i+=BATCH_SIZE)
         {
-            //std::cout << "\r" << i << "/" << x_train.size();
+
             end+=BATCH_SIZE;
-            if(end > samples-1){end = samples-1;}
+            if(end > samples){end = samples;}
 
             auto batch_x = x_train.slice(i, end); 
             auto batch_y = y_train.slice(i, end); 
@@ -119,8 +120,9 @@ void model<T>::train(tensor<T>& x_train, tensor<T>& y_train, optimizer<T>& optim
             //stats
             av_loss = av_loss + loss.data();
 
+            std::cout << "Batch " << (i/BATCH_SIZE) << "/" << samples/BATCH_SIZE << " Loss: " << loss.data() << std::endl;
+
         }
-        std::cout << "epoch " + std::to_string(k + 1) + " average loss: " << av_loss / samples << std::endl;
     }
 }
 

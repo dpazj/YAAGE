@@ -60,8 +60,8 @@ void do_moon()
     tensor<double> y(vec_y,{vec_y.size(), 1});
 
     size_t batch_size = 128;
-    double learning_rate = 0.05;
-    unsigned int epoch = 500;
+    double learning_rate = 0.5;
+    unsigned int epoch = 100;
     SDG<double> optim(learning_rate);
     MoonNet<double> model;
     model.train(X,y, optim, batch_size, epoch, loss::binary_cross_entropy<double>);

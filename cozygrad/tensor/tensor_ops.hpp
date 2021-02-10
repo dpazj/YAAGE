@@ -1,5 +1,7 @@
 #pragma once
 
+#include <eigen3/Eigen/Core>
+
 #include "tensor_broadcasting_utils.hpp"
 #include "tensor.hpp"
 
@@ -242,24 +244,11 @@ tensor<T> dot(const tensor<T>& x, const tensor<T>& y)
     {
         if(dim == out_shape.size() - 2)
         {
-            size_t tmp_x = 0;
-            size_t tmp_o = 0;
+            auto a = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor > > ( x_data + x_offset, M, K);
+            auto b = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > ( y_data + y_offset, K, N);
+            auto c = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > ( o_data + o_offset, M, N);
+            c.noalias() = a * b;
 
-            //TODO this should be optimised at somepoint - eigen?
-            for(size_t i=0; i<M;i++)
-            {
-                for (size_t j = 0; j < N; j++)
-                {
-                    T acc = 0.0f;
-                    for (size_t k = 0; k < K; k++)
-                    {
-                        acc += x_data[tmp_x + k + x_offset] * y_data[k * N + j + y_offset];
-                    }
-                    o_data[tmp_o + j + o_offset] = acc;
-                }
-                tmp_x+=K;
-                tmp_o+=N;
-            }
             return;
         }
 

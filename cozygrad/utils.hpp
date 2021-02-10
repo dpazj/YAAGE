@@ -20,11 +20,18 @@ namespace utils
     template <typename T>
     void print_vec(const std::vector<T>& vec)
     {
+        std::cout << vec_to_string(vec) << std::endl;
+    }
+
+    template <typename T>
+    std::string vec_to_string(const std::vector<T>& vec)
+    {
+        std::string out; 
         for(const auto& x : vec)
         {
-            std::cout << x << " ";
+            out += std::to_string(x) + " ";
         }
-        std::cout << std::endl;
+        return out;
     }
     
 

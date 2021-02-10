@@ -76,7 +76,7 @@ void graph<T>::zero_gradients()
 {
     for(auto x : m_exec_order)
     {
-        x->get_gradient().zeros(); 
+        x->get_gradient().erase(); 
     }
 }
 

@@ -1,9 +1,11 @@
+
 CXX = g++
 
 CFLAGS = -Wall -Werror
-CPPFLAGS = $(CFLAGS)
+CPPFLAGS = -O3 $(CFLAGS) $(EIGEN_INCLUDE)
 
 LDFLAGS = 
+
 
 OBJ=main.o \
 

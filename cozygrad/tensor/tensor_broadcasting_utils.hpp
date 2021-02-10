@@ -74,7 +74,7 @@ tensor_shape calculate_broadcast_shapes(tensor_shape& x_shape, tensor_shape& y_s
     {
         if( (x_shape[i] != 1 && y_shape[i] != 1) && (x_shape[i] != y_shape[i]) )
         {
-            throw std::runtime_error("Unbroadcastable shapes!");
+            throw std::runtime_error("Unbroadcastable shapes! got x:" + utils::vec_to_string(x_shape) + " and y:" + utils::vec_to_string(y_shape) );
         }
         out_shape.push_back(std::max(x_shape[i], y_shape[i]));
     }

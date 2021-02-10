@@ -48,6 +48,8 @@ class tensor
         void ones();
         void random(T min = -1, T max = 1);
 
+        void erase();
+
         T* data() const;
         size_t size() const;
         void print(std::ostream& os) const;
@@ -133,6 +135,8 @@ tensor<T>::tensor(std::vector<char>& buf, tensor_shape shape)
 
     if(buf.size() != m_size * sizeof(T))
     {
+        std::cout << buf.size() / sizeof(T) << "\n" << m_size << std::endl;
+        utils::print_vec(shape);
         throw std::runtime_error("Buffer size does not match size given by shape!");
     }
     std::memcpy(m_data, buf.data(),buf.size());
@@ -336,6 +340,21 @@ void tensor<T>::random(T min, T max)
 {
     map([&min, &max](T&){return utils::get_rand_double(min, max);});
 }
+
+//frees memory and shape
+template <typename T>
+void tensor<T>::erase()
+{
+    if(m_data != nullptr)
+    {
+        delete[] m_data;
+        m_data = nullptr;
+    }
+    
+    m_shape = {0};
+    m_size = 0;
+}
+
 
 template <typename T>
 T* tensor<T>::data() const {return m_data;}
