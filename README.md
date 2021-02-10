@@ -2,7 +2,7 @@
 ***Work In Progress ⚠️🔨👷🏻***
 
 
-A cozy, header-only machine learning library and autograd engine written from scratch in c++. Cozygrad evaluates directed acyclic graphs and computes their gradients. Graphs are constructed with a simple and easy to use API. A Tensor class is also provided (similar to Numpy Arrays) with broadcasting and axis summation operations.
+A cozy, header-only machine learning library and autograd engine written from scratch in c++. Cozygrad evaluates directed acyclic graphs and computes their gradients. Graphs are constructed with a simple and easy to use API. A Tensor/NDArray class is also provided (similar to Numpy Arrays) with broadcasting and axis summation operations.
 
 
 ## tensor example
