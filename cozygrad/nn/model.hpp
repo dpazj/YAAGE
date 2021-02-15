@@ -19,8 +19,7 @@ class model
         ~model();
 
         void train(tensor<T>& x_train, tensor<T>& y_train, optimizer<T>& optim, size_t BATCH_SIZE, unsigned int epochs, std::function<node<T>&(node<T>&,node<T>&)> loss_fn);
-        //void evaluate(std::vector<tensor>& x_test, std::vector<tensor>& y_test);
-
+        void evaluate(tensor<T>& x_test, tensor<T>& y_test, std::function<node<T>&(node<T>&,node<T>&)> loss_fn);
 
         virtual node<T>& create_model() = 0;
 
@@ -33,8 +32,6 @@ class model
         std::vector<tensor<T>*> m_model_parameters;
         node<T>* m_input_node = nullptr;
         node<T>* m_model = nullptr;
-
-        std::function<node<T>&(node<T>&,node<T>&)> m_loss_fn;
 };
 
 template<typename T>
@@ -44,6 +41,8 @@ model<T>::~model()
     {
         delete x;
     }
+    m_input_node = nullptr;
+    m_model = nullptr;
 }
 
 template<typename T>
@@ -80,23 +79,25 @@ void model<T>::train(tensor<T>& x_train, tensor<T>& y_train, optimizer<T>& optim
 {
     std::cout << "started training" << std::endl;
 
+    if(m_model == nullptr)
+    {
+        m_model = &create_model();
+    }
+    auto& model = *m_model;
+    
 
-    auto& model = create_model();
+
     node<T> label;
-
-    m_model = &model;
-    m_loss_fn = loss_fn;
 
     auto& loss = loss_fn(label, model);
     graph<T> g(loss);
 
     size_t end;
-  
     size_t samples = x_train.shape()[0];
 
 
     for(size_t k=0; k < EPOCHS; k++){
-        std::cout << "start epoch " << k + 1 << std::endl;
+        std::cout << "Epoch " << k + 1 << "/" << EPOCHS << std::endl;
         tensor<T> av_loss = {0};
 
         end = 0;
@@ -120,43 +121,79 @@ void model<T>::train(tensor<T>& x_train, tensor<T>& y_train, optimizer<T>& optim
             //stats
             av_loss = av_loss + loss.data();
 
-            std::cout << "Batch " << (i/BATCH_SIZE) << "/" << samples/BATCH_SIZE << " Loss: " << loss.data() << std::endl;
-
+            std::cout << "\rBatch " << (i/BATCH_SIZE) << "/" << samples/BATCH_SIZE << std::flush;
         }
+
+        std::cout << std::endl << "Epoch " << k+1 << " average loss :" << av_loss / (samples / BATCH_SIZE) << std::endl; 
     }
 }
 
-// void model::evaluate(std::vector<tensor>& x_test, std::vector<tensor>& y_test)
-// {
-//     if(m_model == nullptr)
-//     {
-//         throw std::runtime_error("Model has not been trained yet : )");
-//     }
+template<typename T>
+void model<T>::evaluate(tensor<T>& x_test, tensor<T>& y_test, std::function<node<T>&(node<T>&,node<T>&)> loss_fn)
+{
+    std::cout << "Evaluating model..." << std::endl;
+    if(m_model == nullptr)
+    {
+        m_model = &create_model();
+    }
+    auto& model = *m_model;
 
-//     auto& model = *m_model;
-//     node label;
-//     tensor av_loss = {0};
-
-
-//     auto& loss = m_loss_fn(label, model);
-
-//     graph g(loss);
+    node<T> label;
+    tensor<T> av_loss = {0};
 
 
-//     for(size_t i=0; i < x_test.size();i++)
-//     {
-//         m_input_node->set_data(&x_test[i]);
-//         label.set_data(&y_test[i]);
-//         g.forwards();
+    auto& loss = loss_fn(label, model);
 
-//         av_loss = av_loss + *loss.data();
+    graph<T> g(loss);
+
+    double accuracy = 0.0;
+
+    size_t samples = x_test.shape()[0];
+
+    for(size_t i=0; i<samples;i++)
+    {
+
+        auto item_x = x_test.slice(i, i+1); 
+        auto item_y = y_test.slice(i, i+1); 
+
+        m_input_node->set_data(&item_x);
+        label.set_data(&item_y);
+        g.forwards();
+
+        av_loss = av_loss + loss.data();
         
-//         //stats
-//     }
 
-//     std::cout << "Evaluation average loss: " << av_loss.data()[0] / x_test.size() << std::endl;
+        tensor<T> prediction = model.data();
+       
+
+        T* prediction_data_ptr = prediction.data();
+        size_t max_idx = 0;
+        T max = 0;
+        for(size_t i=0; i<prediction.size();i++)
+        {
+            if(prediction_data_ptr[i] > max)
+            {
+                max = prediction_data_ptr[i];
+                max_idx = i;
+            }
+        }
+        prediction.zeros();
+        prediction_data_ptr[max_idx] = 1.0;
+
+        //stats
+        if(prediction == item_y)
+        {
+            accuracy +=1;
+        }
         
-// }
+        
+    }
+
+    std::cout << "Evaluation average loss: " << av_loss / samples << std::endl;
+    std::cout << "Evaluation accuracy: " << accuracy/ samples * 100 << "%" << std::endl;
+
+        
+}
 
 }//namespace czy
 

@@ -56,14 +56,21 @@ void do_moon()
     }
 
 
+    //utils::print_vec(vec_y);
+    //utils::print_vec(vec_X);
+
+
     tensor<double> X(vec_X,{vec_X.size()/2, 2});
     tensor<double> y(vec_y,{vec_y.size(), 1});
 
-    size_t batch_size = 128;
-    double learning_rate = 0.5;
-    unsigned int epoch = 100;
+    //std::cout << y << std::endl;
+    //std::cout << X << std::endl;
+
+    size_t batch_size = 10;
+    double learning_rate = 0.1;
+    unsigned int epoch = 50;
     SDG<double> optim(learning_rate);
     MoonNet<double> model;
     model.train(X,y, optim, batch_size, epoch, loss::binary_cross_entropy<double>);
-    //model.evaluate(X,y);
+    model.evaluate(X,y, loss::binary_cross_entropy<double>);
 }

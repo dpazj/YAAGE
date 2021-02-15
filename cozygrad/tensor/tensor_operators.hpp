@@ -9,6 +9,12 @@ namespace czy{
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const tensor<T>& ten)
 {
+    if(ten.size() == 1)
+    {
+        os << ten.m_data[0];
+        return os;
+    }
+
     os << "tensor(";
     ten.print(os);
     os << ", shape=";

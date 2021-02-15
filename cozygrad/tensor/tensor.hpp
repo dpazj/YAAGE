@@ -154,7 +154,7 @@ tensor<T>::tensor(std::vector<T>& buf, tensor_shape shape)
         throw std::runtime_error("Buffer size does not match size given by shape!");
     }
 
-    std::memcpy(m_data, buf.data(),buf.size());
+    std::memcpy(m_data, buf.data(), buf.size() * sizeof(T));
 }
 
 
@@ -298,7 +298,6 @@ tensor<T> tensor<T>::slice(int start, int end)
 
     tensor<T> tensor_slice(new_shape);
     std::memcpy(tensor_slice.m_data, m_data + offset, tensor_slice.m_size * sizeof(T));
-
     return tensor_slice;
 }
 

@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 
-std::mt19937 gen(1337);
+std::mt19937 gen;
 
 namespace czy{
 namespace utils
@@ -18,12 +18,6 @@ namespace utils
 
 
     template <typename T>
-    void print_vec(const std::vector<T>& vec)
-    {
-        std::cout << vec_to_string(vec) << std::endl;
-    }
-
-    template <typename T>
     std::string vec_to_string(const std::vector<T>& vec)
     {
         std::string out; 
@@ -32,6 +26,12 @@ namespace utils
             out += std::to_string(x) + " ";
         }
         return out;
+    }
+
+    template <typename T>
+    void print_vec(const std::vector<T>& vec)
+    {
+        std::cout << vec_to_string(vec) << std::endl;
     }
     
 

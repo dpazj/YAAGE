@@ -13,12 +13,12 @@ class MnistNet : public model<T>
     {
         auto& input = this->create_input_node();
 
-        auto& w1 = this->create_model_param({784,128});
-        auto& w2 = this->create_model_param({128,128});
-        auto& w3 = this->create_model_param({128,10});
+        auto& w1 = this->create_model_param({784,30});
+        auto& w2 = this->create_model_param({30,30});
+        auto& w3 = this->create_model_param({30,10});
 
-        auto& b1 = this->create_model_param({1,128});
-        auto& b2 = this->create_model_param({1,128});
+        auto& b1 = this->create_model_param({1,30});
+        auto& b2 = this->create_model_param({1,30});
         auto& b3 = this->create_model_param({1,10});
 
         auto& l1 = (input.dot(w1) + b1).relu(); //layer 1
@@ -54,8 +54,9 @@ void do_mnist()
 
     for(const auto& byte : train_y_bytes)
     {
+        size_t idx = (size_t) byte;
         std::vector<double> tmp(10,0.0);
-        tmp[byte] = 1.0;
+        tmp[idx] = 1.0;
         train_y_double.insert(train_y_double.end(), tmp.begin(), tmp.end());
     }
 
@@ -68,16 +69,42 @@ void do_mnist()
     tensor<double> X(train_x_double, {img_count, 784});
     tensor<double> y(train_y_double, {img_count, 10} );
 
+    //std::cout << y << std::endl;
+
 
     //scale to 0-1
     X.map([](double x){ return x / 255;});
 
-    
-    double learning_rate = 0.000001;
-    unsigned int epoch = 500;
-    size_t batch_size = 512;
+
+    //visulaise dataset
+    // X = X > 0;
+    // size_t c = 0;
+    // for(size_t i=0; i < X.size(); i+=784)
+    // {
+    //     std::cout << y.slice(c,c+1) << std::endl;
+    //     c++;
+    //     for(size_t j=0; j < 28; j++)
+    //     {
+    //         for(size_t k=0;k<28;k++)
+    //         {
+    //             std::cout << X[i + j * 28 + k] << "";
+    //         }
+    //         std::cout << std::endl;
+    //     }
+    //     std::cout << std::endl;
+    // }
+    // X = X.slice(0,10000);    
+    // y = y.slice(0,10000);    
+
+
+    double learning_rate = 3;
+    unsigned int epochs = 200;
+    size_t batch_size = 64;
     SDG<double> optim(learning_rate);
     MnistNet<double> model;
     
-    model.train(X,y, optim, batch_size, epoch, loss::mean_squared_error<double>);
+    model.train(X,y, optim, batch_size, epochs, loss::mean_squared_error<double>);
+    model.evaluate(X,y, loss::mean_squared_error<double>);
+
+
 }

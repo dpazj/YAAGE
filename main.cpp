@@ -33,12 +33,36 @@ void sanity_test()
     utils::clean_session<double>();
 }
 
+void test_loss_fn()
+{
+
+    tensor<double> a = { 1 , 0 , 1 , 0, 0, 1, 1, 0};
+    tensor<double> b = { 0.997, 0.997 , 0.997, 0.997 ,0.997 ,0.997 , 0.997 ,0.997 };
+    a.reshape({4,2});
+    b.reshape({4,2});
+
+    node<double> y(a);
+    node<double> yhat(b);
+
+    auto loss = loss::mean_squared_error(y, yhat);
+
+    graph<double> g(loss);
+
+    g.forwards();
+    g.backwards();
+
+    std::cout << yhat.gradient() << std::endl;
+    std::cout << loss.data() << std::endl;
+
+
+}
 
 int main()
 {
-
-    //do_mnist();
-    do_moon();
+    std::cout << std::setprecision(3) << std::endl;
+    //test();
+    do_mnist();
+    //do_moon();
    
     return 0;
 
