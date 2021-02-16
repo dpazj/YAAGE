@@ -13,16 +13,21 @@ class MnistNet : public model<T>
     {
         auto& input = this->create_input_node();
 
-        auto& w1 = this->create_model_param({784,30});
-        auto& w2 = this->create_model_param({30,30});
-        auto& w3 = this->create_model_param({30,10});
+        size_t xx = 50;
 
-        auto& b1 = this->create_model_param({1,30});
-        auto& b2 = this->create_model_param({1,30});
+
+        auto& w1 = this->create_model_param({784,xx});
+        auto& w2 = this->create_model_param({xx,xx});
+        auto& w3 = this->create_model_param({xx,10});
+
+
+        auto& b1 = this->create_model_param({1,xx});
+        auto& b2 = this->create_model_param({1,xx});
         auto& b3 = this->create_model_param({1,10});
 
-        auto& l1 = (input.dot(w1) + b1).relu(); //layer 1
-        auto& l2 = (l1.dot(w2) + b2).relu(); //layer 2
+
+        auto& l1 = (input.dot(w1) + b1).sigmoid(); //layer 1
+        auto& l2 = (l1.dot(w2) + b2).sigmoid(); //layer 2
         auto& l3 = (l2.dot(w3) + b3).sigmoid(); //layer 3
         
         return l3;
@@ -60,7 +65,6 @@ void do_mnist()
         train_y_double.insert(train_y_double.end(), tmp.begin(), tmp.end());
     }
 
-
     size_t img_count = train_x_bytes.size() / 784;
 
     std::cout << "done loading dataset!" << std::endl;
@@ -69,12 +73,8 @@ void do_mnist()
     tensor<double> X(train_x_double, {img_count, 784});
     tensor<double> y(train_y_double, {img_count, 10} );
 
-    //std::cout << y << std::endl;
-
-
     //scale to 0-1
     X.map([](double x){ return x / 255;});
-
 
     //visulaise dataset
     // X = X > 0;
@@ -97,14 +97,21 @@ void do_mnist()
     // y = y.slice(0,10000);    
 
 
-    double learning_rate = 3;
-    unsigned int epochs = 200;
-    size_t batch_size = 64;
+    double learning_rate = 10;
+    unsigned int epochs = 30;
+    size_t batch_size = 128;
     SDG<double> optim(learning_rate);
     MnistNet<double> model;
+
+
+    auto X_train = X.slice(0,55000);
+    auto y_train = y.slice(0,55000);
+
+    auto X_test = X.slice(55000);
+    auto y_test = y.slice(55000);
     
-    model.train(X,y, optim, batch_size, epochs, loss::mean_squared_error<double>);
-    model.evaluate(X,y, loss::mean_squared_error<double>);
+    model.train(X_train,y_train, optim, batch_size, epochs, loss::mean_squared_error<double>);
+    model.evaluate(X_test,y_test, loss::mean_squared_error<double>);
 
 
 }

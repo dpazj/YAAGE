@@ -59,7 +59,10 @@ void test_loss_fn()
 
 int main()
 {
-    std::cout << std::setprecision(3) << std::endl;
+
+    utils::set_random_seed(1337);
+    
+    std::cout << std::setprecision(5) << std::endl;
     //test();
     do_mnist();
     //do_moon();

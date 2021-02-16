@@ -9,6 +9,13 @@ std::mt19937 gen;
 namespace czy{
 namespace utils
 {
+
+    void set_random_seed(unsigned int seed_val)
+    {
+        gen.seed(seed_val);
+    }
+
+
     template <typename T>
     T get_rand_double(T min, T max)
     {
