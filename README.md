@@ -133,7 +133,6 @@ int main()
     return 0;
 }
 ```
-:) 
 ## TODO
 * Split operation on tensor to make a 'view' to the data rather than copy
 * fast matmul - Eigen?
